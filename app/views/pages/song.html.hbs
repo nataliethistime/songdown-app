@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{track}}</title>
+
+
+  <!-- There's JS code to handle what the href of this element becomes. -->
+  <link id="themeCssElement" rel="stylesheet" type="text/css" href="">
+
+  <link rel="stylesheet" type="text/css" href="{{assetsUrl}}/css/styles.css">
+  <link rel="stylesheet" href="{{assetsUrl}}/css/vendor/anchor.css">
+</head>
+
+
+<body>
+  <h1 class="center-text">{{artist}} - {{track}}</h1>
+
+
+  <div id="song" style="display: none;">
+    {{{html}}}
+  </div>
+
+
+  <div id="sidebar">
+  <h3>Toolbox</h3>
+
+  <label for="fontSize">Font size: <input type="text" id="fontSize"></label>
+  <br />
+  <label for="viewSelector">View Mode: <select id="viewSelector">
+    <option value="0">Lyrics and Chords</option>
+    <option value="1">Just Lyrics</option>
+  </select></label>
+  <br />
+  <label for="themeSelector">Select Theme: <select id="themeSelector"></select></label>
+  <br />
+  <label for="transposeSelector">Transpose: <select id="transposeSelector">
+    <!-- Lots o' options -->
+    <option value="6">+6</option>
+    <option value="5">+5</option>
+    <option value="4">+4</option>
+    <option value="3">+3</option>
+    <option value="2">+2</option>
+    <option value="1">+1</option>
+    <option value="0" selected="true">0</option>
+    <option value="-1">-1</option>
+    <option value="-2">-2</option>
+    <option value="-3">-3</option>
+    <option value="-4">-4</option>
+    <option value="-5">-5</option>
+    <option value="-6">-6</option>
+  </select></label>
+  <br />
+  <button type="button" id="printButton">Print!</button>
+  </div>
+</body>
+
+<script type="text/javascript">
+  window.ASSETS_URL = '{{assetsUrl}}';
+  window.FNAME = '{{fname}}';
+</script>
+<script type="text/javascript" src="{{assetsUrl}}/{{crshUrl}}"></script>
+</html>

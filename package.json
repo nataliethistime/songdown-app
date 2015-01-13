@@ -1,0 +1,20 @@
+{
+  "name": "songdown-app",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "bootable": "0.2.x",
+    "bootable-environment": "0.2.x",
+    "coffee-script": "^1.8.0",
+    "connect-assets": "^4.3.3",
+    "connect-coffee-script": "^0.2.0",
+    "connect-powered-by": "0.1.x",
+    "express": "3.x.x",
+    "hbs": "^2.8.0",
+    "locomotive": "0.4.x",
+    "lodash": "^2.4.1"
+  },
+  "scripts": {
+    "start": "node server.js"
+  }
+}
