@@ -12,14 +12,12 @@ module.exports = function() {
     this.use(express.logger());
   }
 
-  var staticDir = __dirname + '/../../public';
-
   this.use(poweredBy('Locomotive'));
   this.use(express.favicon());
   this.use(csCompiler({
-    src: staticDir
+    src: this.get('staticDir')
   }));
-  this.use(express.static(staticDir));
+  this.use(express.static(this.get('staticDir')));
   this.use(express.bodyParser());
   this.use(express.methodOverride());
   this.use(this.router);
