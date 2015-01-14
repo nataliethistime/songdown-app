@@ -7,8 +7,8 @@
   <!-- There's JS code to handle what the href of this element becomes. -->
   <link id="themeCssElement" rel="stylesheet" type="text/css" href="">
 
-  <link rel="stylesheet" type="text/css" href="css/styles.css">
-  <link rel="stylesheet" href="css/vendor/anchor.css">
+  {{#css "css/styles"}}{{/css}}
+  {{#css "css/vendor/anchor"}}{{/css}}
 </head>
 
 
@@ -55,8 +55,19 @@
 </body>
 
 <script type="text/javascript">
-  window.ASSETS_URL = '{{assetsUrl}}';
+  window.THEMES = [
+    {
+      name: 'Default',
+      url: '{{#assetPath "css/theme-default"}}{{/assetPath}}'
+    },
+    {
+      name: 'Colourful',
+      url: '{{#assetPath "css/theme-colorful"}}{{/assetPath}}'
+    }
+  ];
   window.FNAME = '{{fname}}';
 </script>
-<script type="text/javascript" src="{{assetsUrl}}/{{crshUrl}}"></script>
+
+{{#js "js/song"}}{{/js}}
+
 </html>

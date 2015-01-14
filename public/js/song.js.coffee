@@ -1,3 +1,5 @@
+#= require_tree vendor
+
 'use strict'
 
 themeUrl = (name) ->
@@ -7,16 +9,7 @@ themeUrl = (name) ->
 FONT_SIZE = 16
 FADE_TIME = 300
 
-THEMES = [
-  {
-    name: 'Default'
-    url: themeUrl 'default'
-  }
-  {
-    name: 'Colourful'
-    url: themeUrl 'colourful'
-  }
-]
+THEMES = window.THEMES
 
 
 init = ->
@@ -102,18 +95,18 @@ setFontSize = (size = FONT_SIZE) ->
 
 changeViewMode = (num) ->
   switch num
-  # Show lyrics and chords
-  when 0
-    $ '.verse-chords, .verse-lyrics'
-      .fadeIn FADE_TIME
+    # Show lyrics and chords
+    when 0
+      $ '.verse-chords, .verse-lyrics'
+        .fadeIn FADE_TIME
 
-  # Show lyrics
-  # Hide chords
-  when 1
-    $ '.verse-chords'
-      .fadeOut FADE_TIME
-    $ '.verse-lyrics'
-      .fadeIn FADE_TIME
+    # Show lyrics
+    # Hide chords
+    when 1
+      $ '.verse-chords'
+        .fadeOut FADE_TIME
+      $ '.verse-lyrics'
+        .fadeIn FADE_TIME
 
 
 changeTheme = (url) ->

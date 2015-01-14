@@ -1,3 +1,5 @@
+'use strict';
+
 var locomotive = require('locomotive');
 var bootable = require('bootable');
 var environment = require('bootable-environment');

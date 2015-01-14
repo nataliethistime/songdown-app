@@ -1,14 +1,11 @@
 'use strict'
 
 _ = require 'lodash'
-{ncp} = require 'ncp'
-del = require 'del'
-down = require 'download-github-repo'
-extfs = require 'extfs'
-fs = require 'fs'
 glob = require 'glob'
-path = require 'path'
 normalizeNewline = require 'normalize-newline'
+
+fs = require 'fs'
+path = require 'path'
 
 Document = require 'songdown-compiler'
 
@@ -17,6 +14,7 @@ class Song
   constructor: (fname, @songDir) ->
 
     [@fname, @location, @artist, @track] = @handleNames fname
+    @names = {@fname, @location, @artist, @track}
 
   # Given 'Hillsong - Our God.songdown' - returns: [fname, location, artist, track] where:
   # fname    => 'Hillsong - Our God.songdown'
@@ -43,8 +41,8 @@ class Song
     songs = {}
     files = glob.sync '*.songdown', cwd: songDir
 
-    _.each files, (name) ->
-      song = new Song name, songDir
+    _.each files, (fname) ->
+      song = new Song fname, songDir
       songs[song.artist] ?= []
       songs[song.artist].push song.names
 

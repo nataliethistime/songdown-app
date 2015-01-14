@@ -1,3 +1,5 @@
+#= require_tree vendor
+
 'use strict'
 
 doc = window.document
