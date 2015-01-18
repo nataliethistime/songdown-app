@@ -4,14 +4,14 @@ This is the web application component of the Songdown project. [![Dependency Sta
 
 # Changes
 
-### (2015-1-14)
+### 0.0.1 (2015-1-18)
 - Initial moving of the application from an Express application to a Locomotive app. Note: most things are not really tested in the new environment, most likely there are a lot of bugs lurking.
 
 # License
 
 This project is made with :heart: under the MIT license by Nathan McCallum.
 
-> Copyright (c) 2014 Nathan McCallum
+> Copyright (c) 2015 Nathan McCallum
 
 > Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
