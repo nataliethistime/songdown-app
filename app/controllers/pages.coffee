@@ -7,7 +7,6 @@ module.exports = new Controller()
 Song = require '../models/song'
 
 module.exports.index = ->
-  console.log @
   @title = 'Songdown Collection'
   @songs = Song::loadSongs @app.get 'songDir'
   @render()
@@ -19,3 +18,6 @@ module.exports.song = ->
   {@artist, @track} = song
   @html = song.toHtml()
   this.render()
+
+# module.exports.edit = ->
+  # Do Stuff!

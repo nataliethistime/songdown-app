@@ -2,9 +2,6 @@
 
 'use strict'
 
-themeUrl = (name) ->
-  "#{window.ASSETS_URL}/css/theme-#{name}.css"
-
 
 FONT_SIZE = 16
 FADE_TIME = 300
@@ -73,6 +70,11 @@ initEvents = ->
     .on 'click', (event) ->
       event.preventDefault()
       window.print()
+
+  $ '#editButton'
+    .off()
+    .click (event) ->
+      alert 'This feature is coming soon!'
 
 
 initAnchors = ->
