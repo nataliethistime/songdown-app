@@ -12,6 +12,8 @@ This is the web application component of the Songdown project. [![Dependency Sta
 
 ### 0.1.0
 - Use Browserify to bundle dependencies in the front-end.
+- Added a `.gitignore` file to not track the Browserified files.
+- Remove anchors in the song view.
 
 ### 0.0.1 (2015-1-18)
 - Initial moving of the application from an Express application to a Locomotive app. Note: most things are not really tested in the new environment, most likely there are a lot of bugs lurking.
