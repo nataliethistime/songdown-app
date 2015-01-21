@@ -1,7 +1,6 @@
-#= require_tree vendor
-
 'use strict'
 
+$ = require 'jquery'
 
 FONT_SIZE = 16
 FADE_TIME = 300
@@ -19,7 +18,6 @@ init = ->
   $el.append "<option value=\"#{theme.url}\">#{theme.name}</option>" for theme in THEMES
 
   initEvents()
-  initAnchors()
   initTheme()
   showContent()
 
@@ -75,10 +73,6 @@ initEvents = ->
     .off()
     .click (event) ->
       alert 'This feature is coming soon!'
-
-
-initAnchors = ->
-  window.addAnchors '.verse-title'
 
 
 initTheme = ->

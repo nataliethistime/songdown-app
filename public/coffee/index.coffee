@@ -1,21 +1,16 @@
-#= require_tree vendor
-
 'use strict'
 
-doc = window.document
-interval = null
+GeoPattern = require 'geopattern'
+$ = require 'jquery'
+randomString = require('randomstring').generate
 
 generateBackground = ->
-  t = new Trianglify
-    noiseIntensity: 0
-    cellsize: 120
-
-  $doc = $ doc
-  pattern = t.generate $doc.width(), $doc.height()
+  pattern = GeoPattern.generate randomString Math.random() * Math.random() * 100
   $ 'body'
-    .css 'background-image', pattern.dataUrl
+    .css 'background-image', pattern.toDataUrl()
 
 
+interval = null
 resetInterval = ->
   clearInterval interval
   interval = setInterval generateBackground, 60 * 1000
@@ -26,9 +21,9 @@ init = ->
   # Do the background thang.
   generateBackground()
   resetInterval()
-  $ doc
+  $ document
     .scroll resetInterval
 
 
-$ window.document
+$ document
   .ready -> init()

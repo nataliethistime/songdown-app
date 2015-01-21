@@ -15,7 +15,7 @@ module.exports = ->
 
   @use assets
     paths: [
-      @get 'staticDir'
+      @get 'publicDir'
     ]
 
   @use express.bodyParser()

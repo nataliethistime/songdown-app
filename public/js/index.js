@@ -1,5 +1,3593 @@
+(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+(function() {
+  'use strict';
+  var $, GeoPattern, generateBackground, init, interval, randomString, resetInterval;
+
+  GeoPattern = require('geopattern');
+
+  $ = require('jquery');
+
+  randomString = require('randomstring').generate;
+
+  generateBackground = function() {
+    var pattern;
+    pattern = GeoPattern.generate(randomString(Math.random() * Math.random() * 100));
+    return $('body').css('background-image', pattern.toDataUrl());
+  };
+
+  interval = null;
+
+  resetInterval = function() {
+    clearInterval(interval);
+    return interval = setInterval(generateBackground, 60 * 1000);
+  };
+
+  init = function() {
+    generateBackground();
+    resetInterval();
+    return $(document).scroll(resetInterval);
+  };
+
+  $(document).ready(function() {
+    return init();
+  });
+
+}).call(this);
+
+},{"geopattern":6,"jquery":13,"randomstring":14}],2:[function(require,module,exports){
 /*!
- * jQuery JavaScript Library v2.1.1
+ * The buffer module from node.js, for the browser.
+ *
+ * @author   Feross Aboukhadijeh <feross@feross.org> <http://feross.org>
+ * @license  MIT
+ */
+
+var base64 = require('base64-js')
+var ieee754 = require('ieee754')
+var isArray = require('is-array')
+
+exports.Buffer = Buffer
+exports.SlowBuffer = SlowBuffer
+exports.INSPECT_MAX_BYTES = 50
+Buffer.poolSize = 8192 // not used by this implementation
+
+var kMaxLength = 0x3fffffff
+var rootParent = {}
+
+/**
+ * If `Buffer.TYPED_ARRAY_SUPPORT`:
+ *   === true    Use Uint8Array implementation (fastest)
+ *   === false   Use Object implementation (most compatible, even IE6)
+ *
+ * Browsers that support typed arrays are IE 10+, Firefox 4+, Chrome 7+, Safari 5.1+,
+ * Opera 11.6+, iOS 4.2+.
+ *
+ * Note:
+ *
+ * - Implementation must support adding new properties to `Uint8Array` instances.
+ *   Firefox 4-29 lacked support, fixed in Firefox 30+.
+ *   See: https://bugzilla.mozilla.org/show_bug.cgi?id=695438.
+ *
+ *  - Chrome 9-10 is missing the `TypedArray.prototype.subarray` function.
+ *
+ *  - IE10 has a broken `TypedArray.prototype.subarray` function which returns arrays of
+ *    incorrect length in some situations.
+ *
+ * We detect these buggy browsers and set `Buffer.TYPED_ARRAY_SUPPORT` to `false` so they will
+ * get the Object implementation, which is slower but will work correctly.
+ */
+Buffer.TYPED_ARRAY_SUPPORT = (function () {
+  try {
+    var buf = new ArrayBuffer(0)
+    var arr = new Uint8Array(buf)
+    arr.foo = function () { return 42 }
+    return 42 === arr.foo() && // typed array instances can be augmented
+        typeof arr.subarray === 'function' && // chrome 9-10 lack `subarray`
+        new Uint8Array(1).subarray(1, 1).byteLength === 0 // ie10 has broken `subarray`
+  } catch (e) {
+    return false
+  }
+})()
+
+/**
+ * Class: Buffer
+ * =============
+ *
+ * The Buffer constructor returns instances of `Uint8Array` that are augmented
+ * with function properties for all the node `Buffer` API functions. We use
+ * `Uint8Array` so that square bracket notation works as expected -- it returns
+ * a single octet.
+ *
+ * By augmenting the instances, we can avoid modifying the `Uint8Array`
+ * prototype.
+ */
+function Buffer (subject, encoding, noZero) {
+  if (!(this instanceof Buffer))
+    return new Buffer(subject, encoding, noZero)
+
+  var type = typeof subject
+
+  // Find the length
+  var length
+  if (type === 'number')
+    length = subject > 0 ? subject >>> 0 : 0
+  else if (type === 'string') {
+    length = Buffer.byteLength(subject, encoding)
+  } else if (type === 'object' && subject !== null) { // assume object is array-like
+    if (subject.type === 'Buffer' && isArray(subject.data))
+      subject = subject.data
+    length = +subject.length > 0 ? Math.floor(+subject.length) : 0
+  } else
+    throw new TypeError('must start with number, buffer, array or string')
+
+  if (length > kMaxLength)
+    throw new RangeError('Attempt to allocate Buffer larger than maximum ' +
+      'size: 0x' + kMaxLength.toString(16) + ' bytes')
+
+  var buf
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    // Preferred: Return an augmented `Uint8Array` instance for best performance
+    buf = Buffer._augment(new Uint8Array(length))
+  } else {
+    // Fallback: Return THIS instance of Buffer (created by `new`)
+    buf = this
+    buf.length = length
+    buf._isBuffer = true
+  }
+
+  var i
+  if (Buffer.TYPED_ARRAY_SUPPORT && typeof subject.byteLength === 'number') {
+    // Speed optimization -- use set if we're copying from a typed array
+    buf._set(subject)
+  } else if (isArrayish(subject)) {
+    // Treat array-ish objects as a byte array
+    if (Buffer.isBuffer(subject)) {
+      for (i = 0; i < length; i++)
+        buf[i] = subject.readUInt8(i)
+    } else {
+      for (i = 0; i < length; i++)
+        buf[i] = ((subject[i] % 256) + 256) % 256
+    }
+  } else if (type === 'string') {
+    buf.write(subject, 0, encoding)
+  } else if (type === 'number' && !Buffer.TYPED_ARRAY_SUPPORT && !noZero) {
+    for (i = 0; i < length; i++) {
+      buf[i] = 0
+    }
+  }
+
+  if (length > 0 && length <= Buffer.poolSize)
+    buf.parent = rootParent
+
+  return buf
+}
+
+function SlowBuffer(subject, encoding, noZero) {
+  if (!(this instanceof SlowBuffer))
+    return new SlowBuffer(subject, encoding, noZero)
+
+  var buf = new Buffer(subject, encoding, noZero)
+  delete buf.parent
+  return buf
+}
+
+Buffer.isBuffer = function (b) {
+  return !!(b != null && b._isBuffer)
+}
+
+Buffer.compare = function (a, b) {
+  if (!Buffer.isBuffer(a) || !Buffer.isBuffer(b))
+    throw new TypeError('Arguments must be Buffers')
+
+  var x = a.length
+  var y = b.length
+  for (var i = 0, len = Math.min(x, y); i < len && a[i] === b[i]; i++) {}
+  if (i !== len) {
+    x = a[i]
+    y = b[i]
+  }
+  if (x < y) return -1
+  if (y < x) return 1
+  return 0
+}
+
+Buffer.isEncoding = function (encoding) {
+  switch (String(encoding).toLowerCase()) {
+    case 'hex':
+    case 'utf8':
+    case 'utf-8':
+    case 'ascii':
+    case 'binary':
+    case 'base64':
+    case 'raw':
+    case 'ucs2':
+    case 'ucs-2':
+    case 'utf16le':
+    case 'utf-16le':
+      return true
+    default:
+      return false
+  }
+}
+
+Buffer.concat = function (list, totalLength) {
+  if (!isArray(list)) throw new TypeError('Usage: Buffer.concat(list[, length])')
+
+  if (list.length === 0) {
+    return new Buffer(0)
+  } else if (list.length === 1) {
+    return list[0]
+  }
+
+  var i
+  if (totalLength === undefined) {
+    totalLength = 0
+    for (i = 0; i < list.length; i++) {
+      totalLength += list[i].length
+    }
+  }
+
+  var buf = new Buffer(totalLength)
+  var pos = 0
+  for (i = 0; i < list.length; i++) {
+    var item = list[i]
+    item.copy(buf, pos)
+    pos += item.length
+  }
+  return buf
+}
+
+Buffer.byteLength = function (str, encoding) {
+  var ret
+  str = str + ''
+  switch (encoding || 'utf8') {
+    case 'ascii':
+    case 'binary':
+    case 'raw':
+      ret = str.length
+      break
+    case 'ucs2':
+    case 'ucs-2':
+    case 'utf16le':
+    case 'utf-16le':
+      ret = str.length * 2
+      break
+    case 'hex':
+      ret = str.length >>> 1
+      break
+    case 'utf8':
+    case 'utf-8':
+      ret = utf8ToBytes(str).length
+      break
+    case 'base64':
+      ret = base64ToBytes(str).length
+      break
+    default:
+      ret = str.length
+  }
+  return ret
+}
+
+// pre-set for values that may exist in the future
+Buffer.prototype.length = undefined
+Buffer.prototype.parent = undefined
+
+// toString(encoding, start=0, end=buffer.length)
+Buffer.prototype.toString = function (encoding, start, end) {
+  var loweredCase = false
+
+  start = start >>> 0
+  end = end === undefined || end === Infinity ? this.length : end >>> 0
+
+  if (!encoding) encoding = 'utf8'
+  if (start < 0) start = 0
+  if (end > this.length) end = this.length
+  if (end <= start) return ''
+
+  while (true) {
+    switch (encoding) {
+      case 'hex':
+        return hexSlice(this, start, end)
+
+      case 'utf8':
+      case 'utf-8':
+        return utf8Slice(this, start, end)
+
+      case 'ascii':
+        return asciiSlice(this, start, end)
+
+      case 'binary':
+        return binarySlice(this, start, end)
+
+      case 'base64':
+        return base64Slice(this, start, end)
+
+      case 'ucs2':
+      case 'ucs-2':
+      case 'utf16le':
+      case 'utf-16le':
+        return utf16leSlice(this, start, end)
+
+      default:
+        if (loweredCase)
+          throw new TypeError('Unknown encoding: ' + encoding)
+        encoding = (encoding + '').toLowerCase()
+        loweredCase = true
+    }
+  }
+}
+
+Buffer.prototype.equals = function (b) {
+  if (!Buffer.isBuffer(b)) throw new TypeError('Argument must be a Buffer')
+  return Buffer.compare(this, b) === 0
+}
+
+Buffer.prototype.inspect = function () {
+  var str = ''
+  var max = exports.INSPECT_MAX_BYTES
+  if (this.length > 0) {
+    str = this.toString('hex', 0, max).match(/.{2}/g).join(' ')
+    if (this.length > max)
+      str += ' ... '
+  }
+  return '<Buffer ' + str + '>'
+}
+
+Buffer.prototype.compare = function (b) {
+  if (!Buffer.isBuffer(b)) throw new TypeError('Argument must be a Buffer')
+  return Buffer.compare(this, b)
+}
+
+// `get` will be removed in Node 0.13+
+Buffer.prototype.get = function (offset) {
+  console.log('.get() is deprecated. Access using array indexes instead.')
+  return this.readUInt8(offset)
+}
+
+// `set` will be removed in Node 0.13+
+Buffer.prototype.set = function (v, offset) {
+  console.log('.set() is deprecated. Access using array indexes instead.')
+  return this.writeUInt8(v, offset)
+}
+
+function hexWrite (buf, string, offset, length) {
+  offset = Number(offset) || 0
+  var remaining = buf.length - offset
+  if (!length) {
+    length = remaining
+  } else {
+    length = Number(length)
+    if (length > remaining) {
+      length = remaining
+    }
+  }
+
+  // must be an even number of digits
+  var strLen = string.length
+  if (strLen % 2 !== 0) throw new Error('Invalid hex string')
+
+  if (length > strLen / 2) {
+    length = strLen / 2
+  }
+  for (var i = 0; i < length; i++) {
+    var byte = parseInt(string.substr(i * 2, 2), 16)
+    if (isNaN(byte)) throw new Error('Invalid hex string')
+    buf[offset + i] = byte
+  }
+  return i
+}
+
+function utf8Write (buf, string, offset, length) {
+  var charsWritten = blitBuffer(utf8ToBytes(string, buf.length - offset), buf, offset, length)
+  return charsWritten
+}
+
+function asciiWrite (buf, string, offset, length) {
+  var charsWritten = blitBuffer(asciiToBytes(string), buf, offset, length)
+  return charsWritten
+}
+
+function binaryWrite (buf, string, offset, length) {
+  return asciiWrite(buf, string, offset, length)
+}
+
+function base64Write (buf, string, offset, length) {
+  var charsWritten = blitBuffer(base64ToBytes(string), buf, offset, length)
+  return charsWritten
+}
+
+function utf16leWrite (buf, string, offset, length) {
+  var charsWritten = blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length, 2)
+  return charsWritten
+}
+
+Buffer.prototype.write = function (string, offset, length, encoding) {
+  // Support both (string, offset, length, encoding)
+  // and the legacy (string, encoding, offset, length)
+  if (isFinite(offset)) {
+    if (!isFinite(length)) {
+      encoding = length
+      length = undefined
+    }
+  } else {  // legacy
+    var swap = encoding
+    encoding = offset
+    offset = length
+    length = swap
+  }
+
+  offset = Number(offset) || 0
+
+  if (length < 0 || offset < 0 || offset > this.length)
+    throw new RangeError('attempt to write outside buffer bounds');
+
+  var remaining = this.length - offset
+  if (!length) {
+    length = remaining
+  } else {
+    length = Number(length)
+    if (length > remaining) {
+      length = remaining
+    }
+  }
+  encoding = String(encoding || 'utf8').toLowerCase()
+
+  var ret
+  switch (encoding) {
+    case 'hex':
+      ret = hexWrite(this, string, offset, length)
+      break
+    case 'utf8':
+    case 'utf-8':
+      ret = utf8Write(this, string, offset, length)
+      break
+    case 'ascii':
+      ret = asciiWrite(this, string, offset, length)
+      break
+    case 'binary':
+      ret = binaryWrite(this, string, offset, length)
+      break
+    case 'base64':
+      ret = base64Write(this, string, offset, length)
+      break
+    case 'ucs2':
+    case 'ucs-2':
+    case 'utf16le':
+    case 'utf-16le':
+      ret = utf16leWrite(this, string, offset, length)
+      break
+    default:
+      throw new TypeError('Unknown encoding: ' + encoding)
+  }
+  return ret
+}
+
+Buffer.prototype.toJSON = function () {
+  return {
+    type: 'Buffer',
+    data: Array.prototype.slice.call(this._arr || this, 0)
+  }
+}
+
+function base64Slice (buf, start, end) {
+  if (start === 0 && end === buf.length) {
+    return base64.fromByteArray(buf)
+  } else {
+    return base64.fromByteArray(buf.slice(start, end))
+  }
+}
+
+function utf8Slice (buf, start, end) {
+  var res = ''
+  var tmp = ''
+  end = Math.min(buf.length, end)
+
+  for (var i = start; i < end; i++) {
+    if (buf[i] <= 0x7F) {
+      res += decodeUtf8Char(tmp) + String.fromCharCode(buf[i])
+      tmp = ''
+    } else {
+      tmp += '%' + buf[i].toString(16)
+    }
+  }
+
+  return res + decodeUtf8Char(tmp)
+}
+
+function asciiSlice (buf, start, end) {
+  var ret = ''
+  end = Math.min(buf.length, end)
+
+  for (var i = start; i < end; i++) {
+    ret += String.fromCharCode(buf[i] & 0x7F)
+  }
+  return ret
+}
+
+function binarySlice (buf, start, end) {
+  var ret = ''
+  end = Math.min(buf.length, end)
+
+  for (var i = start; i < end; i++) {
+    ret += String.fromCharCode(buf[i])
+  }
+  return ret
+}
+
+function hexSlice (buf, start, end) {
+  var len = buf.length
+
+  if (!start || start < 0) start = 0
+  if (!end || end < 0 || end > len) end = len
+
+  var out = ''
+  for (var i = start; i < end; i++) {
+    out += toHex(buf[i])
+  }
+  return out
+}
+
+function utf16leSlice (buf, start, end) {
+  var bytes = buf.slice(start, end)
+  var res = ''
+  for (var i = 0; i < bytes.length; i += 2) {
+    res += String.fromCharCode(bytes[i] + bytes[i + 1] * 256)
+  }
+  return res
+}
+
+Buffer.prototype.slice = function (start, end) {
+  var len = this.length
+  start = ~~start
+  end = end === undefined ? len : ~~end
+
+  if (start < 0) {
+    start += len;
+    if (start < 0)
+      start = 0
+  } else if (start > len) {
+    start = len
+  }
+
+  if (end < 0) {
+    end += len
+    if (end < 0)
+      end = 0
+  } else if (end > len) {
+    end = len
+  }
+
+  if (end < start)
+    end = start
+
+  var newBuf
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    newBuf = Buffer._augment(this.subarray(start, end))
+  } else {
+    var sliceLen = end - start
+    newBuf = new Buffer(sliceLen, undefined, true)
+    for (var i = 0; i < sliceLen; i++) {
+      newBuf[i] = this[i + start]
+    }
+  }
+
+  if (newBuf.length)
+    newBuf.parent = this.parent || this
+
+  return newBuf
+}
+
+/*
+ * Need to make sure that buffer isn't trying to write out of bounds.
+ */
+function checkOffset (offset, ext, length) {
+  if ((offset % 1) !== 0 || offset < 0)
+    throw new RangeError('offset is not uint')
+  if (offset + ext > length)
+    throw new RangeError('Trying to access beyond buffer length')
+}
+
+Buffer.prototype.readUIntLE = function (offset, byteLength, noAssert) {
+  offset = offset >>> 0
+  byteLength = byteLength >>> 0
+  if (!noAssert)
+    checkOffset(offset, byteLength, this.length)
+
+  var val = this[offset]
+  var mul = 1
+  var i = 0
+  while (++i < byteLength && (mul *= 0x100))
+    val += this[offset + i] * mul
+
+  return val
+}
+
+Buffer.prototype.readUIntBE = function (offset, byteLength, noAssert) {
+  offset = offset >>> 0
+  byteLength = byteLength >>> 0
+  if (!noAssert)
+    checkOffset(offset, byteLength, this.length)
+
+  var val = this[offset + --byteLength]
+  var mul = 1
+  while (byteLength > 0 && (mul *= 0x100))
+    val += this[offset + --byteLength] * mul;
+
+  return val
+}
+
+Buffer.prototype.readUInt8 = function (offset, noAssert) {
+  if (!noAssert)
+    checkOffset(offset, 1, this.length)
+  return this[offset]
+}
+
+Buffer.prototype.readUInt16LE = function (offset, noAssert) {
+  if (!noAssert)
+    checkOffset(offset, 2, this.length)
+  return this[offset] | (this[offset + 1] << 8)
+}
+
+Buffer.prototype.readUInt16BE = function (offset, noAssert) {
+  if (!noAssert)
+    checkOffset(offset, 2, this.length)
+  return (this[offset] << 8) | this[offset + 1]
+}
+
+Buffer.prototype.readUInt32LE = function (offset, noAssert) {
+  if (!noAssert)
+    checkOffset(offset, 4, this.length)
+
+  return ((this[offset]) |
+      (this[offset + 1] << 8) |
+      (this[offset + 2] << 16)) +
+      (this[offset + 3] * 0x1000000)
+}
+
+Buffer.prototype.readUInt32BE = function (offset, noAssert) {
+  if (!noAssert)
+    checkOffset(offset, 4, this.length)
+
+  return (this[offset] * 0x1000000) +
+      ((this[offset + 1] << 16) |
+      (this[offset + 2] << 8) |
+      this[offset + 3])
+}
+
+Buffer.prototype.readIntLE = function (offset, byteLength, noAssert) {
+  offset = offset >>> 0
+  byteLength = byteLength >>> 0
+  if (!noAssert)
+    checkOffset(offset, byteLength, this.length)
+
+  var val = this[offset]
+  var mul = 1
+  var i = 0
+  while (++i < byteLength && (mul *= 0x100))
+    val += this[offset + i] * mul
+  mul *= 0x80
+
+  if (val >= mul)
+    val -= Math.pow(2, 8 * byteLength)
+
+  return val
+}
+
+Buffer.prototype.readIntBE = function (offset, byteLength, noAssert) {
+  offset = offset >>> 0
+  byteLength = byteLength >>> 0
+  if (!noAssert)
+    checkOffset(offset, byteLength, this.length)
+
+  var i = byteLength
+  var mul = 1
+  var val = this[offset + --i]
+  while (i > 0 && (mul *= 0x100))
+    val += this[offset + --i] * mul
+  mul *= 0x80
+
+  if (val >= mul)
+    val -= Math.pow(2, 8 * byteLength)
+
+  return val
+}
+
+Buffer.prototype.readInt8 = function (offset, noAssert) {
+  if (!noAssert)
+    checkOffset(offset, 1, this.length)
+  if (!(this[offset] & 0x80))
+    return (this[offset])
+  return ((0xff - this[offset] + 1) * -1)
+}
+
+Buffer.prototype.readInt16LE = function (offset, noAssert) {
+  if (!noAssert)
+    checkOffset(offset, 2, this.length)
+  var val = this[offset] | (this[offset + 1] << 8)
+  return (val & 0x8000) ? val | 0xFFFF0000 : val
+}
+
+Buffer.prototype.readInt16BE = function (offset, noAssert) {
+  if (!noAssert)
+    checkOffset(offset, 2, this.length)
+  var val = this[offset + 1] | (this[offset] << 8)
+  return (val & 0x8000) ? val | 0xFFFF0000 : val
+}
+
+Buffer.prototype.readInt32LE = function (offset, noAssert) {
+  if (!noAssert)
+    checkOffset(offset, 4, this.length)
+
+  return (this[offset]) |
+      (this[offset + 1] << 8) |
+      (this[offset + 2] << 16) |
+      (this[offset + 3] << 24)
+}
+
+Buffer.prototype.readInt32BE = function (offset, noAssert) {
+  if (!noAssert)
+    checkOffset(offset, 4, this.length)
+
+  return (this[offset] << 24) |
+      (this[offset + 1] << 16) |
+      (this[offset + 2] << 8) |
+      (this[offset + 3])
+}
+
+Buffer.prototype.readFloatLE = function (offset, noAssert) {
+  if (!noAssert)
+    checkOffset(offset, 4, this.length)
+  return ieee754.read(this, offset, true, 23, 4)
+}
+
+Buffer.prototype.readFloatBE = function (offset, noAssert) {
+  if (!noAssert)
+    checkOffset(offset, 4, this.length)
+  return ieee754.read(this, offset, false, 23, 4)
+}
+
+Buffer.prototype.readDoubleLE = function (offset, noAssert) {
+  if (!noAssert)
+    checkOffset(offset, 8, this.length)
+  return ieee754.read(this, offset, true, 52, 8)
+}
+
+Buffer.prototype.readDoubleBE = function (offset, noAssert) {
+  if (!noAssert)
+    checkOffset(offset, 8, this.length)
+  return ieee754.read(this, offset, false, 52, 8)
+}
+
+function checkInt (buf, value, offset, ext, max, min) {
+  if (!Buffer.isBuffer(buf)) throw new TypeError('buffer must be a Buffer instance')
+  if (value > max || value < min) throw new RangeError('value is out of bounds')
+  if (offset + ext > buf.length) throw new RangeError('index out of range')
+}
+
+Buffer.prototype.writeUIntLE = function (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset >>> 0
+  byteLength = byteLength >>> 0
+  if (!noAssert)
+    checkInt(this, value, offset, byteLength, Math.pow(2, 8 * byteLength), 0)
+
+  var mul = 1
+  var i = 0
+  this[offset] = value & 0xFF
+  while (++i < byteLength && (mul *= 0x100))
+    this[offset + i] = (value / mul) >>> 0 & 0xFF
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeUIntBE = function (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset >>> 0
+  byteLength = byteLength >>> 0
+  if (!noAssert)
+    checkInt(this, value, offset, byteLength, Math.pow(2, 8 * byteLength), 0)
+
+  var i = byteLength - 1
+  var mul = 1
+  this[offset + i] = value & 0xFF
+  while (--i >= 0 && (mul *= 0x100))
+    this[offset + i] = (value / mul) >>> 0 & 0xFF
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeUInt8 = function (value, offset, noAssert) {
+  value = +value
+  offset = offset >>> 0
+  if (!noAssert)
+    checkInt(this, value, offset, 1, 0xff, 0)
+  if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value)
+  this[offset] = value
+  return offset + 1
+}
+
+function objectWriteUInt16 (buf, value, offset, littleEndian) {
+  if (value < 0) value = 0xffff + value + 1
+  for (var i = 0, j = Math.min(buf.length - offset, 2); i < j; i++) {
+    buf[offset + i] = (value & (0xff << (8 * (littleEndian ? i : 1 - i)))) >>>
+      (littleEndian ? i : 1 - i) * 8
+  }
+}
+
+Buffer.prototype.writeUInt16LE = function (value, offset, noAssert) {
+  value = +value
+  offset = offset >>> 0
+  if (!noAssert)
+    checkInt(this, value, offset, 2, 0xffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = value
+    this[offset + 1] = (value >>> 8)
+  } else objectWriteUInt16(this, value, offset, true)
+  return offset + 2
+}
+
+Buffer.prototype.writeUInt16BE = function (value, offset, noAssert) {
+  value = +value
+  offset = offset >>> 0
+  if (!noAssert)
+    checkInt(this, value, offset, 2, 0xffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 8)
+    this[offset + 1] = value
+  } else objectWriteUInt16(this, value, offset, false)
+  return offset + 2
+}
+
+function objectWriteUInt32 (buf, value, offset, littleEndian) {
+  if (value < 0) value = 0xffffffff + value + 1
+  for (var i = 0, j = Math.min(buf.length - offset, 4); i < j; i++) {
+    buf[offset + i] = (value >>> (littleEndian ? i : 3 - i) * 8) & 0xff
+  }
+}
+
+Buffer.prototype.writeUInt32LE = function (value, offset, noAssert) {
+  value = +value
+  offset = offset >>> 0
+  if (!noAssert)
+    checkInt(this, value, offset, 4, 0xffffffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset + 3] = (value >>> 24)
+    this[offset + 2] = (value >>> 16)
+    this[offset + 1] = (value >>> 8)
+    this[offset] = value
+  } else objectWriteUInt32(this, value, offset, true)
+  return offset + 4
+}
+
+Buffer.prototype.writeUInt32BE = function (value, offset, noAssert) {
+  value = +value
+  offset = offset >>> 0
+  if (!noAssert)
+    checkInt(this, value, offset, 4, 0xffffffff, 0)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 24)
+    this[offset + 1] = (value >>> 16)
+    this[offset + 2] = (value >>> 8)
+    this[offset + 3] = value
+  } else objectWriteUInt32(this, value, offset, false)
+  return offset + 4
+}
+
+Buffer.prototype.writeIntLE = function (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset >>> 0
+  if (!noAssert) {
+    checkInt(this,
+             value,
+             offset,
+             byteLength,
+             Math.pow(2, 8 * byteLength - 1) - 1,
+             -Math.pow(2, 8 * byteLength - 1))
+  }
+
+  var i = 0
+  var mul = 1
+  var sub = value < 0 ? 1 : 0
+  this[offset] = value & 0xFF
+  while (++i < byteLength && (mul *= 0x100))
+    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeIntBE = function (value, offset, byteLength, noAssert) {
+  value = +value
+  offset = offset >>> 0
+  if (!noAssert) {
+    checkInt(this,
+             value,
+             offset,
+             byteLength,
+             Math.pow(2, 8 * byteLength - 1) - 1,
+             -Math.pow(2, 8 * byteLength - 1))
+  }
+
+  var i = byteLength - 1
+  var mul = 1
+  var sub = value < 0 ? 1 : 0
+  this[offset + i] = value & 0xFF
+  while (--i >= 0 && (mul *= 0x100))
+    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF
+
+  return offset + byteLength
+}
+
+Buffer.prototype.writeInt8 = function (value, offset, noAssert) {
+  value = +value
+  offset = offset >>> 0
+  if (!noAssert)
+    checkInt(this, value, offset, 1, 0x7f, -0x80)
+  if (!Buffer.TYPED_ARRAY_SUPPORT) value = Math.floor(value)
+  if (value < 0) value = 0xff + value + 1
+  this[offset] = value
+  return offset + 1
+}
+
+Buffer.prototype.writeInt16LE = function (value, offset, noAssert) {
+  value = +value
+  offset = offset >>> 0
+  if (!noAssert)
+    checkInt(this, value, offset, 2, 0x7fff, -0x8000)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = value
+    this[offset + 1] = (value >>> 8)
+  } else objectWriteUInt16(this, value, offset, true)
+  return offset + 2
+}
+
+Buffer.prototype.writeInt16BE = function (value, offset, noAssert) {
+  value = +value
+  offset = offset >>> 0
+  if (!noAssert)
+    checkInt(this, value, offset, 2, 0x7fff, -0x8000)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 8)
+    this[offset + 1] = value
+  } else objectWriteUInt16(this, value, offset, false)
+  return offset + 2
+}
+
+Buffer.prototype.writeInt32LE = function (value, offset, noAssert) {
+  value = +value
+  offset = offset >>> 0
+  if (!noAssert)
+    checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000)
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = value
+    this[offset + 1] = (value >>> 8)
+    this[offset + 2] = (value >>> 16)
+    this[offset + 3] = (value >>> 24)
+  } else objectWriteUInt32(this, value, offset, true)
+  return offset + 4
+}
+
+Buffer.prototype.writeInt32BE = function (value, offset, noAssert) {
+  value = +value
+  offset = offset >>> 0
+  if (!noAssert)
+    checkInt(this, value, offset, 4, 0x7fffffff, -0x80000000)
+  if (value < 0) value = 0xffffffff + value + 1
+  if (Buffer.TYPED_ARRAY_SUPPORT) {
+    this[offset] = (value >>> 24)
+    this[offset + 1] = (value >>> 16)
+    this[offset + 2] = (value >>> 8)
+    this[offset + 3] = value
+  } else objectWriteUInt32(this, value, offset, false)
+  return offset + 4
+}
+
+function checkIEEE754 (buf, value, offset, ext, max, min) {
+  if (value > max || value < min) throw new RangeError('value is out of bounds')
+  if (offset + ext > buf.length) throw new RangeError('index out of range')
+  if (offset < 0) throw new RangeError('index out of range')
+}
+
+function writeFloat (buf, value, offset, littleEndian, noAssert) {
+  if (!noAssert)
+    checkIEEE754(buf, value, offset, 4, 3.4028234663852886e+38, -3.4028234663852886e+38)
+  ieee754.write(buf, value, offset, littleEndian, 23, 4)
+  return offset + 4
+}
+
+Buffer.prototype.writeFloatLE = function (value, offset, noAssert) {
+  return writeFloat(this, value, offset, true, noAssert)
+}
+
+Buffer.prototype.writeFloatBE = function (value, offset, noAssert) {
+  return writeFloat(this, value, offset, false, noAssert)
+}
+
+function writeDouble (buf, value, offset, littleEndian, noAssert) {
+  if (!noAssert)
+    checkIEEE754(buf, value, offset, 8, 1.7976931348623157E+308, -1.7976931348623157E+308)
+  ieee754.write(buf, value, offset, littleEndian, 52, 8)
+  return offset + 8
+}
+
+Buffer.prototype.writeDoubleLE = function (value, offset, noAssert) {
+  return writeDouble(this, value, offset, true, noAssert)
+}
+
+Buffer.prototype.writeDoubleBE = function (value, offset, noAssert) {
+  return writeDouble(this, value, offset, false, noAssert)
+}
+
+// copy(targetBuffer, targetStart=0, sourceStart=0, sourceEnd=buffer.length)
+Buffer.prototype.copy = function (target, target_start, start, end) {
+  var source = this
+
+  if (!start) start = 0
+  if (!end && end !== 0) end = this.length
+  if (target_start >= target.length) target_start = target.length
+  if (!target_start) target_start = 0
+  if (end > 0 && end < start) end = start
+
+  // Copy 0 bytes; we're done
+  if (end === start) return 0
+  if (target.length === 0 || source.length === 0) return 0
+
+  // Fatal error conditions
+  if (target_start < 0)
+    throw new RangeError('targetStart out of bounds')
+  if (start < 0 || start >= source.length) throw new RangeError('sourceStart out of bounds')
+  if (end < 0) throw new RangeError('sourceEnd out of bounds')
+
+  // Are we oob?
+  if (end > this.length)
+    end = this.length
+  if (target.length - target_start < end - start)
+    end = target.length - target_start + start
+
+  var len = end - start
+
+  if (len < 1000 || !Buffer.TYPED_ARRAY_SUPPORT) {
+    for (var i = 0; i < len; i++) {
+      target[i + target_start] = this[i + start]
+    }
+  } else {
+    target._set(this.subarray(start, start + len), target_start)
+  }
+
+  return len
+}
+
+// fill(value, start=0, end=buffer.length)
+Buffer.prototype.fill = function (value, start, end) {
+  if (!value) value = 0
+  if (!start) start = 0
+  if (!end) end = this.length
+
+  if (end < start) throw new RangeError('end < start')
+
+  // Fill 0 bytes; we're done
+  if (end === start) return
+  if (this.length === 0) return
+
+  if (start < 0 || start >= this.length) throw new RangeError('start out of bounds')
+  if (end < 0 || end > this.length) throw new RangeError('end out of bounds')
+
+  var i
+  if (typeof value === 'number') {
+    for (i = start; i < end; i++) {
+      this[i] = value
+    }
+  } else {
+    var bytes = utf8ToBytes(value.toString())
+    var len = bytes.length
+    for (i = start; i < end; i++) {
+      this[i] = bytes[i % len]
+    }
+  }
+
+  return this
+}
+
+/**
+ * Creates a new `ArrayBuffer` with the *copied* memory of the buffer instance.
+ * Added in Node 0.12. Only available in browsers that support ArrayBuffer.
+ */
+Buffer.prototype.toArrayBuffer = function () {
+  if (typeof Uint8Array !== 'undefined') {
+    if (Buffer.TYPED_ARRAY_SUPPORT) {
+      return (new Buffer(this)).buffer
+    } else {
+      var buf = new Uint8Array(this.length)
+      for (var i = 0, len = buf.length; i < len; i += 1) {
+        buf[i] = this[i]
+      }
+      return buf.buffer
+    }
+  } else {
+    throw new TypeError('Buffer.toArrayBuffer not supported in this browser')
+  }
+}
+
+// HELPER FUNCTIONS
+// ================
+
+var BP = Buffer.prototype
+
+/**
+ * Augment a Uint8Array *instance* (not the Uint8Array class!) with Buffer methods
+ */
+Buffer._augment = function (arr) {
+  arr.constructor = Buffer
+  arr._isBuffer = true
+
+  // save reference to original Uint8Array get/set methods before overwriting
+  arr._get = arr.get
+  arr._set = arr.set
+
+  // deprecated, will be removed in node 0.13+
+  arr.get = BP.get
+  arr.set = BP.set
+
+  arr.write = BP.write
+  arr.toString = BP.toString
+  arr.toLocaleString = BP.toString
+  arr.toJSON = BP.toJSON
+  arr.equals = BP.equals
+  arr.compare = BP.compare
+  arr.copy = BP.copy
+  arr.slice = BP.slice
+  arr.readUIntLE = BP.readUIntLE
+  arr.readUIntBE = BP.readUIntBE
+  arr.readUInt8 = BP.readUInt8
+  arr.readUInt16LE = BP.readUInt16LE
+  arr.readUInt16BE = BP.readUInt16BE
+  arr.readUInt32LE = BP.readUInt32LE
+  arr.readUInt32BE = BP.readUInt32BE
+  arr.readIntLE = BP.readIntLE
+  arr.readIntBE = BP.readIntBE
+  arr.readInt8 = BP.readInt8
+  arr.readInt16LE = BP.readInt16LE
+  arr.readInt16BE = BP.readInt16BE
+  arr.readInt32LE = BP.readInt32LE
+  arr.readInt32BE = BP.readInt32BE
+  arr.readFloatLE = BP.readFloatLE
+  arr.readFloatBE = BP.readFloatBE
+  arr.readDoubleLE = BP.readDoubleLE
+  arr.readDoubleBE = BP.readDoubleBE
+  arr.writeUInt8 = BP.writeUInt8
+  arr.writeUIntLE = BP.writeUIntLE
+  arr.writeUIntBE = BP.writeUIntBE
+  arr.writeUInt16LE = BP.writeUInt16LE
+  arr.writeUInt16BE = BP.writeUInt16BE
+  arr.writeUInt32LE = BP.writeUInt32LE
+  arr.writeUInt32BE = BP.writeUInt32BE
+  arr.writeIntLE = BP.writeIntLE
+  arr.writeIntBE = BP.writeIntBE
+  arr.writeInt8 = BP.writeInt8
+  arr.writeInt16LE = BP.writeInt16LE
+  arr.writeInt16BE = BP.writeInt16BE
+  arr.writeInt32LE = BP.writeInt32LE
+  arr.writeInt32BE = BP.writeInt32BE
+  arr.writeFloatLE = BP.writeFloatLE
+  arr.writeFloatBE = BP.writeFloatBE
+  arr.writeDoubleLE = BP.writeDoubleLE
+  arr.writeDoubleBE = BP.writeDoubleBE
+  arr.fill = BP.fill
+  arr.inspect = BP.inspect
+  arr.toArrayBuffer = BP.toArrayBuffer
+
+  return arr
+}
+
+var INVALID_BASE64_RE = /[^+\/0-9A-z\-]/g
+
+function base64clean (str) {
+  // Node strips out invalid characters like \n and \t from the string, base64-js does not
+  str = stringtrim(str).replace(INVALID_BASE64_RE, '')
+  // Node converts strings with length < 2 to ''
+  if (str.length < 2) return ''
+  // Node allows for non-padded base64 strings (missing trailing ===), base64-js does not
+  while (str.length % 4 !== 0) {
+    str = str + '='
+  }
+  return str
+}
+
+function stringtrim (str) {
+  if (str.trim) return str.trim()
+  return str.replace(/^\s+|\s+$/g, '')
+}
+
+function isArrayish (subject) {
+  return isArray(subject) || Buffer.isBuffer(subject) ||
+      subject && typeof subject === 'object' &&
+      typeof subject.length === 'number'
+}
+
+function toHex (n) {
+  if (n < 16) return '0' + n.toString(16)
+  return n.toString(16)
+}
+
+function utf8ToBytes(string, units) {
+  var codePoint, length = string.length
+  var leadSurrogate = null
+  units = units || Infinity
+  var bytes = []
+  var i = 0
+
+  for (; i<length; i++) {
+    codePoint = string.charCodeAt(i)
+
+    // is surrogate component
+    if (codePoint > 0xD7FF && codePoint < 0xE000) {
+
+      // last char was a lead
+      if (leadSurrogate) {
+
+        // 2 leads in a row
+        if (codePoint < 0xDC00) {
+          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+          leadSurrogate = codePoint
+          continue
+        }
+
+        // valid surrogate pair
+        else {
+          codePoint = leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00 | 0x10000
+          leadSurrogate = null
+        }
+      }
+
+      // no lead yet
+      else {
+
+        // unexpected trail
+        if (codePoint > 0xDBFF) {
+          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+          continue
+        }
+
+        // unpaired lead
+        else if (i + 1 === length) {
+          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+          continue
+        }
+
+        // valid lead
+        else {
+          leadSurrogate = codePoint
+          continue
+        }
+      }
+    }
+
+    // valid bmp char, but last char was a lead
+    else if (leadSurrogate) {
+      if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
+      leadSurrogate = null
+    }
+
+    // encode utf8
+    if (codePoint < 0x80) {
+      if ((units -= 1) < 0) break
+      bytes.push(codePoint)
+    }
+    else if (codePoint < 0x800) {
+      if ((units -= 2) < 0) break
+      bytes.push(
+        codePoint >> 0x6 | 0xC0,
+        codePoint & 0x3F | 0x80
+      );
+    }
+    else if (codePoint < 0x10000) {
+      if ((units -= 3) < 0) break
+      bytes.push(
+        codePoint >> 0xC | 0xE0,
+        codePoint >> 0x6 & 0x3F | 0x80,
+        codePoint & 0x3F | 0x80
+      );
+    }
+    else if (codePoint < 0x200000) {
+      if ((units -= 4) < 0) break
+      bytes.push(
+        codePoint >> 0x12 | 0xF0,
+        codePoint >> 0xC & 0x3F | 0x80,
+        codePoint >> 0x6 & 0x3F | 0x80,
+        codePoint & 0x3F | 0x80
+      );
+    }
+    else {
+      throw new Error('Invalid code point')
+    }
+  }
+
+  return bytes
+}
+
+function asciiToBytes (str) {
+  var byteArray = []
+  for (var i = 0; i < str.length; i++) {
+    // Node's code seems to be doing this and not & 0x7F..
+    byteArray.push(str.charCodeAt(i) & 0xFF)
+  }
+  return byteArray
+}
+
+function utf16leToBytes (str, units) {
+  var c, hi, lo
+  var byteArray = []
+  for (var i = 0; i < str.length; i++) {
+
+    if ((units -= 2) < 0) break
+
+    c = str.charCodeAt(i)
+    hi = c >> 8
+    lo = c % 256
+    byteArray.push(lo)
+    byteArray.push(hi)
+  }
+
+  return byteArray
+}
+
+function base64ToBytes (str) {
+  return base64.toByteArray(base64clean(str))
+}
+
+function blitBuffer (src, dst, offset, length, unitSize) {
+  if (unitSize) length -= length % unitSize;
+  for (var i = 0; i < length; i++) {
+    if ((i + offset >= dst.length) || (i >= src.length))
+      break
+    dst[i + offset] = src[i]
+  }
+  return i
+}
+
+function decodeUtf8Char (str) {
+  try {
+    return decodeURIComponent(str)
+  } catch (err) {
+    return String.fromCharCode(0xFFFD) // UTF 8 invalid char
+  }
+}
+
+},{"base64-js":3,"ieee754":4,"is-array":5}],3:[function(require,module,exports){
+var lookup = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+;(function (exports) {
+	'use strict';
+
+  var Arr = (typeof Uint8Array !== 'undefined')
+    ? Uint8Array
+    : Array
+
+	var PLUS   = '+'.charCodeAt(0)
+	var SLASH  = '/'.charCodeAt(0)
+	var NUMBER = '0'.charCodeAt(0)
+	var LOWER  = 'a'.charCodeAt(0)
+	var UPPER  = 'A'.charCodeAt(0)
+	var PLUS_URL_SAFE = '-'.charCodeAt(0)
+	var SLASH_URL_SAFE = '_'.charCodeAt(0)
+
+	function decode (elt) {
+		var code = elt.charCodeAt(0)
+		if (code === PLUS ||
+		    code === PLUS_URL_SAFE)
+			return 62 // '+'
+		if (code === SLASH ||
+		    code === SLASH_URL_SAFE)
+			return 63 // '/'
+		if (code < NUMBER)
+			return -1 //no match
+		if (code < NUMBER + 10)
+			return code - NUMBER + 26 + 26
+		if (code < UPPER + 26)
+			return code - UPPER
+		if (code < LOWER + 26)
+			return code - LOWER + 26
+	}
+
+	function b64ToByteArray (b64) {
+		var i, j, l, tmp, placeHolders, arr
+
+		if (b64.length % 4 > 0) {
+			throw new Error('Invalid string. Length must be a multiple of 4')
+		}
+
+		// the number of equal signs (place holders)
+		// if there are two placeholders, than the two characters before it
+		// represent one byte
+		// if there is only one, then the three characters before it represent 2 bytes
+		// this is just a cheap hack to not do indexOf twice
+		var len = b64.length
+		placeHolders = '=' === b64.charAt(len - 2) ? 2 : '=' === b64.charAt(len - 1) ? 1 : 0
+
+		// base64 is 4/3 + up to two characters of the original data
+		arr = new Arr(b64.length * 3 / 4 - placeHolders)
+
+		// if there are placeholders, only get up to the last complete 4 chars
+		l = placeHolders > 0 ? b64.length - 4 : b64.length
+
+		var L = 0
+
+		function push (v) {
+			arr[L++] = v
+		}
+
+		for (i = 0, j = 0; i < l; i += 4, j += 3) {
+			tmp = (decode(b64.charAt(i)) << 18) | (decode(b64.charAt(i + 1)) << 12) | (decode(b64.charAt(i + 2)) << 6) | decode(b64.charAt(i + 3))
+			push((tmp & 0xFF0000) >> 16)
+			push((tmp & 0xFF00) >> 8)
+			push(tmp & 0xFF)
+		}
+
+		if (placeHolders === 2) {
+			tmp = (decode(b64.charAt(i)) << 2) | (decode(b64.charAt(i + 1)) >> 4)
+			push(tmp & 0xFF)
+		} else if (placeHolders === 1) {
+			tmp = (decode(b64.charAt(i)) << 10) | (decode(b64.charAt(i + 1)) << 4) | (decode(b64.charAt(i + 2)) >> 2)
+			push((tmp >> 8) & 0xFF)
+			push(tmp & 0xFF)
+		}
+
+		return arr
+	}
+
+	function uint8ToBase64 (uint8) {
+		var i,
+			extraBytes = uint8.length % 3, // if we have 1 byte left, pad 2 bytes
+			output = "",
+			temp, length
+
+		function encode (num) {
+			return lookup.charAt(num)
+		}
+
+		function tripletToBase64 (num) {
+			return encode(num >> 18 & 0x3F) + encode(num >> 12 & 0x3F) + encode(num >> 6 & 0x3F) + encode(num & 0x3F)
+		}
+
+		// go through the array every three bytes, we'll deal with trailing stuff later
+		for (i = 0, length = uint8.length - extraBytes; i < length; i += 3) {
+			temp = (uint8[i] << 16) + (uint8[i + 1] << 8) + (uint8[i + 2])
+			output += tripletToBase64(temp)
+		}
+
+		// pad the end with zeros, but make sure to not forget the extra bytes
+		switch (extraBytes) {
+			case 1:
+				temp = uint8[uint8.length - 1]
+				output += encode(temp >> 2)
+				output += encode((temp << 4) & 0x3F)
+				output += '=='
+				break
+			case 2:
+				temp = (uint8[uint8.length - 2] << 8) + (uint8[uint8.length - 1])
+				output += encode(temp >> 10)
+				output += encode((temp >> 4) & 0x3F)
+				output += encode((temp << 2) & 0x3F)
+				output += '='
+				break
+		}
+
+		return output
+	}
+
+	exports.toByteArray = b64ToByteArray
+	exports.fromByteArray = uint8ToBase64
+}(typeof exports === 'undefined' ? (this.base64js = {}) : exports))
+
+},{}],4:[function(require,module,exports){
+exports.read = function(buffer, offset, isLE, mLen, nBytes) {
+  var e, m,
+      eLen = nBytes * 8 - mLen - 1,
+      eMax = (1 << eLen) - 1,
+      eBias = eMax >> 1,
+      nBits = -7,
+      i = isLE ? (nBytes - 1) : 0,
+      d = isLE ? -1 : 1,
+      s = buffer[offset + i];
+
+  i += d;
+
+  e = s & ((1 << (-nBits)) - 1);
+  s >>= (-nBits);
+  nBits += eLen;
+  for (; nBits > 0; e = e * 256 + buffer[offset + i], i += d, nBits -= 8);
+
+  m = e & ((1 << (-nBits)) - 1);
+  e >>= (-nBits);
+  nBits += mLen;
+  for (; nBits > 0; m = m * 256 + buffer[offset + i], i += d, nBits -= 8);
+
+  if (e === 0) {
+    e = 1 - eBias;
+  } else if (e === eMax) {
+    return m ? NaN : ((s ? -1 : 1) * Infinity);
+  } else {
+    m = m + Math.pow(2, mLen);
+    e = e - eBias;
+  }
+  return (s ? -1 : 1) * m * Math.pow(2, e - mLen);
+};
+
+exports.write = function(buffer, value, offset, isLE, mLen, nBytes) {
+  var e, m, c,
+      eLen = nBytes * 8 - mLen - 1,
+      eMax = (1 << eLen) - 1,
+      eBias = eMax >> 1,
+      rt = (mLen === 23 ? Math.pow(2, -24) - Math.pow(2, -77) : 0),
+      i = isLE ? 0 : (nBytes - 1),
+      d = isLE ? 1 : -1,
+      s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0;
+
+  value = Math.abs(value);
+
+  if (isNaN(value) || value === Infinity) {
+    m = isNaN(value) ? 1 : 0;
+    e = eMax;
+  } else {
+    e = Math.floor(Math.log(value) / Math.LN2);
+    if (value * (c = Math.pow(2, -e)) < 1) {
+      e--;
+      c *= 2;
+    }
+    if (e + eBias >= 1) {
+      value += rt / c;
+    } else {
+      value += rt * Math.pow(2, 1 - eBias);
+    }
+    if (value * c >= 2) {
+      e++;
+      c /= 2;
+    }
+
+    if (e + eBias >= eMax) {
+      m = 0;
+      e = eMax;
+    } else if (e + eBias >= 1) {
+      m = (value * c - 1) * Math.pow(2, mLen);
+      e = e + eBias;
+    } else {
+      m = value * Math.pow(2, eBias - 1) * Math.pow(2, mLen);
+      e = 0;
+    }
+  }
+
+  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8);
+
+  e = (e << mLen) | m;
+  eLen += mLen;
+  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8);
+
+  buffer[offset + i - d] |= s * 128;
+};
+
+},{}],5:[function(require,module,exports){
+
+/**
+ * isArray
+ */
+
+var isArray = Array.isArray;
+
+/**
+ * toString
+ */
+
+var str = Object.prototype.toString;
+
+/**
+ * Whether or not the given `val`
+ * is an array.
+ *
+ * example:
+ *
+ *        isArray([]);
+ *        // > true
+ *        isArray(arguments);
+ *        // > false
+ *        isArray('');
+ *        // > false
+ *
+ * @param {mixed} val
+ * @return {bool}
+ */
+
+module.exports = isArray || function (val) {
+  return !! val && '[object Array]' == str.call(val);
+};
+
+},{}],6:[function(require,module,exports){
+(function ($) {
+
+'use strict';
+
+var Pattern = require('./lib/pattern');
+
+/*
+ * Normalize arguments, if not given, to:
+ * string: (new Date()).toString()
+ * options: {}
+ */
+function optArgs(cb) {
+	return function (string, options) {
+		if (typeof string === 'object') {
+			options = string;
+			string = null;
+		}
+		if (string === null || string === undefined) {
+			string = (new Date()).toString();
+		}
+		if (!options) {
+			options = {};
+		}
+
+		return cb.call(this, string, options);
+	};
+}
+
+var GeoPattern = module.exports = {
+	generate: optArgs(function (string, options) {
+		return new Pattern(string, options);
+	})
+};
+
+if ($) {
+
+	// If jQuery, add plugin
+	$.fn.geopattern = optArgs(function (string, options) {
+		return this.each(function () {
+			var titleSha = $(this).attr('data-title-sha');
+			if (titleSha) {
+				options = $.extend({
+					hash: titleSha
+				}, options);
+			}
+			var pattern = GeoPattern.generate(string, options);
+			$(this).css('background-image', pattern.toDataUrl());
+		});
+	});
+
+}
+
+}(typeof jQuery !== 'undefined' ? jQuery : null));
+
+},{"./lib/pattern":8}],7:[function(require,module,exports){
+/*eslint sort-vars:0, curly:0*/
+
+'use strict';
+
+/**
+ * Converts a hex CSS color value to RGB.
+ * Adapted from http://stackoverflow.com/a/5624139.
+ *
+ * @param	String	hex		The hexadecimal color value
+ * @return	Object			The RGB representation
+ */
+function hex2rgb(hex) {
+	// Expand shorthand form (e.g. "03F") to full form (e.g. "0033FF")
+	var shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+	hex = hex.replace(shorthandRegex, function (m, r, g, b) {
+		return r + r + g + g + b + b;
+	});
+
+	var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+	return result ? {
+		r: parseInt(result[1], 16),
+		g: parseInt(result[2], 16),
+		b: parseInt(result[3], 16)
+	} : null;
+}
+
+/**
+ * Converts an RGB color value to a hex string.
+ * @param  Object rgb RGB as r, g, and b keys
+ * @return String     Hex color string
+ */
+function rgb2hex(rgb) {
+	return '#' + ['r', 'g', 'b'].map(function (key) {
+		return ('0' + rgb[key].toString(16)).slice(-2);
+	}).join('');
+}
+
+/**
+ * Converts an RGB color value to HSL. Conversion formula adapted from
+ * http://en.wikipedia.org/wiki/HSL_color_space. This function adapted
+ * from http://stackoverflow.com/a/9493060.
+ * Assumes r, g, and b are contained in the set [0, 255] and
+ * returns h, s, and l in the set [0, 1].
+ *
+ * @param   Object  rgb     RGB as r, g, and b keys
+ * @return  Object          HSL as h, s, and l keys
+ */
+function rgb2hsl(rgb) {
+	var r = rgb.r, g = rgb.g, b = rgb.b;
+	r /= 255; g /= 255; b /= 255;
+	var max = Math.max(r, g, b), min = Math.min(r, g, b);
+	var h, s, l = (max + min) / 2;
+
+	if (max === min) {
+		h = s = 0; // achromatic
+	} else {
+		var d = max - min;
+		s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+		switch (max) {
+			case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+			case g: h = (b - r) / d + 2; break;
+			case b: h = (r - g) / d + 4; break;
+		}
+		h /= 6;
+	}
+
+	return { h: h, s: s, l: l };
+}
+
+/**
+ * Converts an HSL color value to RGB. Conversion formula adapted from
+ * http://en.wikipedia.org/wiki/HSL_color_space. This function adapted
+ * from http://stackoverflow.com/a/9493060.
+ * Assumes h, s, and l are contained in the set [0, 1] and
+ * returns r, g, and b in the set [0, 255].
+ *
+ * @param   Object  hsl     HSL as h, s, and l keys
+ * @return  Object          RGB as r, g, and b values
+ */
+function hsl2rgb(hsl) {
+
+	function hue2rgb(p, q, t) {
+		if (t < 0) t += 1;
+		if (t > 1) t -= 1;
+		if (t < 1 / 6) return p + (q - p) * 6 * t;
+		if (t < 1 / 2) return q;
+		if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+		return p;
+	}
+
+	var h = hsl.h, s = hsl.s, l = hsl.l;
+	var r, g, b;
+
+	if(s === 0){
+		r = g = b = l; // achromatic
+	}else{
+
+		var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+		var p = 2 * l - q;
+		r = hue2rgb(p, q, h + 1 / 3);
+		g = hue2rgb(p, q, h);
+		b = hue2rgb(p, q, h - 1 / 3);
+	}
+
+	return {
+		r: Math.round(r * 255),
+		g: Math.round(g * 255),
+		b: Math.round(b * 255)
+	};
+}
+
+module.exports = {
+	hex2rgb: hex2rgb,
+	rgb2hex: rgb2hex,
+	rgb2hsl: rgb2hsl,
+	hsl2rgb: hsl2rgb,
+	rgb2rgbString: function (rgb) {
+		return 'rgb(' + [rgb.r, rgb.g, rgb.b].join(',') + ')';
+	}
+};
+
+},{}],8:[function(require,module,exports){
+(function (Buffer){
+'use strict';
+
+var extend = require('extend');
+var color  = require('./color');
+var SHA1   = require('./sha1');
+var SVG    = require('./svg');
+
+
+
+var DEFAULTS = {
+	baseColor: '#933c3c'
+};
+
+var PATTERNS = [
+	'octogons',
+	'overlappingCircles',
+	'plusSigns',
+	'xes',
+	'sineWaves',
+	'hexagons',
+	'overlappingRings',
+	'plaid',
+	'triangles',
+	'squares',
+	'concentricCircles',
+	'diamonds',
+	'tessellation',
+	'nestedSquares',
+	'mosaicSquares',
+	'chevrons'
+];
+
+var FILL_COLOR_DARK  = '#222';
+var FILL_COLOR_LIGHT = '#ddd';
+var STROKE_COLOR     = '#000';
+var STROKE_OPACITY   = 0.02;
+var OPACITY_MIN      = 0.02;
+var OPACITY_MAX      = 0.15;
+
+
+
+// Helpers
+
+/**
+ * Extract a substring from a hex string and parse it as an integer
+ * @param {string} hash - Source hex string
+ * @param {number} index - Start index of substring
+ * @param {number} [length] - Length of substring. Defaults to 1.
+ */
+function hexVal(hash, index, len) {
+	return parseInt(hash.substr(index, len || 1), 16);
+}
+
+/*
+ * Re-maps a number from one range to another
+ * http://processing.org/reference/map_.html
+ */
+function map(value, vMin, vMax, dMin, dMax) {
+	var vValue = parseFloat(value);
+	var vRange = vMax - vMin;
+	var dRange = dMax - dMin;
+
+	return (vValue - vMin) * dRange / vRange + dMin;
+}
+
+function fillColor(val) {
+	return (val % 2 === 0) ? FILL_COLOR_LIGHT : FILL_COLOR_DARK;
+}
+
+function fillOpacity(val) {
+	return map(val, 0, 15, OPACITY_MIN, OPACITY_MAX);
+}
+
+
+
+var Pattern = module.exports = function (string, options) {
+	this.opts = extend({}, DEFAULTS, options);
+	this.hash = options.hash || SHA1(string);
+	this.svg = new SVG();
+
+	this.generateBackground();
+	this.generatePattern();
+
+	return this;
+};
+
+Pattern.prototype.toSvg = function () {
+	return this.svg.toString();
+};
+
+Pattern.prototype.toString = function () {
+	return this.toSvg();
+};
+
+Pattern.prototype.toBase64 = function () {
+	var str = this.toSvg();
+	var b64;
+
+	// Use window.btoa if in the browser; otherwise fallback to node buffers
+	if (typeof window !== 'undefined' && typeof window.btoa === 'function') {
+		b64 = window.btoa(str);
+	} else {
+		b64 = new Buffer(str).toString('base64');
+	}
+
+	return b64;
+};
+
+Pattern.prototype.toDataUri = function () {
+	return 'data:image/svg+xml;base64,' + this.toBase64();
+};
+
+Pattern.prototype.toDataUrl = function () {
+	return 'url("' + this.toDataUri() + '")';
+};
+
+Pattern.prototype.generateBackground = function () {
+	var baseColor, hueOffset, rgb, satOffset;
+
+	if (this.opts.color) {
+		rgb = color.hex2rgb(this.opts.color);
+	} else {
+		hueOffset = map(hexVal(this.hash, 14, 3), 0, 4095, 0, 359);
+		satOffset = hexVal(this.hash, 17);
+		baseColor = color.rgb2hsl(color.hex2rgb(this.opts.baseColor));
+
+		baseColor.h = (((baseColor.h * 360 - hueOffset) + 360) % 360) / 360;
+
+		if (satOffset % 2 === 0) {
+			baseColor.s = Math.min(1, ((baseColor.s * 100) + satOffset) / 100);
+		} else {
+			baseColor.s = Math.max(0, ((baseColor.s * 100) - satOffset) / 100);
+		}
+		rgb = color.hsl2rgb(baseColor);
+	}
+
+	this.color = color.rgb2hex(rgb);
+
+	this.svg.rect(0, 0, '100%', '100%', {
+		fill: color.rgb2rgbString(rgb)
+	});
+};
+
+Pattern.prototype.generatePattern = function () {
+	var generator = this.opts.generator;
+
+	if (generator) {
+		if (PATTERNS.indexOf(generator) < 0) {
+			throw new Error('The generator '
+				+ generator
+				+ ' does not exist.');
+		}
+	} else {
+		generator = PATTERNS[hexVal(this.hash, 20)];
+	}
+
+	return this['geo' + generator.slice(0, 1).toUpperCase() + generator.slice(1)]();
+};
+
+function buildHexagonShape(sideLength) {
+	var c = sideLength;
+	var a = c / 2;
+	var b = Math.sin(60 * Math.PI / 180) * c;
+	return [
+		0, b,
+		a, 0,
+		a + c, 0,
+		2 * c, b,
+		a + c, 2 * b,
+		a, 2 * b,
+		0, b
+	].join(',');
+}
+
+Pattern.prototype.geoHexagons = function () {
+	var scale      = hexVal(this.hash, 0);
+	var sideLength = map(scale, 0, 15, 8, 60);
+	var hexHeight  = sideLength * Math.sqrt(3);
+	var hexWidth   = sideLength * 2;
+	var hex        = buildHexagonShape(sideLength);
+	var dy, fill, i, opacity, styles, val, x, y;
+
+	this.svg.setWidth(hexWidth * 3 + sideLength * 3);
+	this.svg.setHeight(hexHeight * 6);
+
+	i = 0;
+	for (y = 0; y < 6; y++) {
+		for (x = 0; x < 6; x++) {
+			val     = hexVal(this.hash, i);
+			dy      = x % 2 === 0 ? y * hexHeight : y * hexHeight + hexHeight / 2;
+			opacity = fillOpacity(val);
+			fill    = fillColor(val);
+
+			styles = {
+				fill: fill,
+				'fill-opacity': opacity,
+				stroke: STROKE_COLOR,
+				'stroke-opacity': STROKE_OPACITY
+			};
+
+			this.svg.polyline(hex, styles).transform({
+				translate: [
+					x * sideLength * 1.5 - hexWidth / 2,
+					dy - hexHeight / 2
+				]
+			});
+
+			// Add an extra one at top-right, for tiling.
+			if (x === 0) {
+				this.svg.polyline(hex, styles).transform({
+					translate: [
+						6 * sideLength * 1.5 - hexWidth / 2,
+						dy - hexHeight / 2
+					]
+				});
+			}
+
+			// Add an extra row at the end that matches the first row, for tiling.
+			if (y === 0) {
+				dy = x % 2 === 0 ? 6 * hexHeight : 6 * hexHeight + hexHeight / 2;
+				this.svg.polyline(hex, styles).transform({
+					translate: [
+						x * sideLength * 1.5 - hexWidth / 2,
+						dy - hexHeight / 2
+					]
+				});
+			}
+
+			// Add an extra one at bottom-right, for tiling.
+			if (x === 0 && y === 0) {
+				this.svg.polyline(hex, styles).transform({
+					translate: [
+						6 * sideLength * 1.5 - hexWidth / 2,
+						5 * hexHeight + hexHeight / 2
+					]
+				});
+			}
+
+			i++;
+		}
+	}
+};
+
+Pattern.prototype.geoSineWaves = function () {
+	var period    = Math.floor(map(hexVal(this.hash, 0), 0, 15, 100, 400));
+	var amplitude = Math.floor(map(hexVal(this.hash, 1), 0, 15, 30, 100));
+	var waveWidth = Math.floor(map(hexVal(this.hash, 2), 0, 15, 3, 30));
+	var fill, i, opacity, str, styles, val, xOffset;
+
+	this.svg.setWidth(period);
+	this.svg.setHeight(waveWidth * 36);
+
+	for (i = 0; i < 36; i++) {
+		val     = hexVal(this.hash, i);
+		opacity = fillOpacity(val);
+		fill    = fillColor(val);
+		xOffset = period / 4 * 0.7;
+
+		styles = {
+			fill: 'none',
+			stroke: fill,
+			opacity: opacity,
+			'stroke-width': '' + waveWidth + 'px'
+		};
+
+		str = 'M0 ' + amplitude +
+			' C ' + xOffset + ' 0, ' + (period / 2 - xOffset) + ' 0, ' + (period / 2) + ' ' + amplitude +
+			' S ' + (period - xOffset) + ' ' + (amplitude * 2) + ', ' + period + ' ' + amplitude +
+			' S ' + (period * 1.5 - xOffset) + ' 0, ' + (period * 1.5) + ', ' + amplitude;
+
+		this.svg.path(str, styles).transform({
+			translate: [
+				-period / 4,
+				waveWidth * i - amplitude * 1.5
+			]
+		});
+		this.svg.path(str, styles).transform({
+			translate: [
+				-period / 4,
+				waveWidth * i - amplitude * 1.5 + waveWidth * 36
+			]
+		});
+	}
+};
+
+function buildChevronShape(width, height) {
+	var e = height * 0.66;
+	return [
+		[
+			0, 0,
+			width / 2, height - e,
+			width / 2, height,
+			0, e,
+			0, 0
+		],
+		[
+			width / 2, height - e,
+			width, 0,
+			width, e,
+			width / 2, height,
+			width / 2, height - e
+		]
+	].map(function (x) { return x.join(','); });
+}
+
+Pattern.prototype.geoChevrons = function () {
+	var chevronWidth  = map(hexVal(this.hash, 0), 0, 15, 30, 80);
+	var chevronHeight = map(hexVal(this.hash, 0), 0, 15, 30, 80);
+	var chevron       = buildChevronShape(chevronWidth, chevronHeight);
+	var fill, i, opacity, styles, val, x, y;
+
+	this.svg.setWidth(chevronWidth * 6);
+	this.svg.setHeight(chevronHeight * 6 * 0.66);
+
+	i = 0;
+	for (y = 0; y < 6; y++) {
+		for (x = 0; x < 6; x++) {
+			val     = hexVal(this.hash, i);
+			opacity = fillOpacity(val);
+			fill    = fillColor(val);
+
+			styles = {
+				stroke: STROKE_COLOR,
+				'stroke-opacity': STROKE_OPACITY,
+				fill: fill,
+				'fill-opacity': opacity,
+				'stroke-width': 1
+			};
+
+			this.svg.group(styles).transform({
+				translate: [
+					x * chevronWidth,
+					y * chevronHeight * 0.66 - chevronHeight / 2
+				]
+			}).polyline(chevron).end();
+
+			// Add an extra row at the end that matches the first row, for tiling.
+			if (y === 0) {
+				this.svg.group(styles).transform({
+					translate: [
+						x * chevronWidth,
+						6 * chevronHeight * 0.66 - chevronHeight / 2
+					]
+				}).polyline(chevron).end();
+			}
+
+			i += 1;
+		}
+	}
+};
+
+function buildPlusShape(squareSize) {
+	return [
+		[squareSize, 0, squareSize, squareSize * 3],
+		[0, squareSize, squareSize * 3, squareSize]
+	];
+}
+
+Pattern.prototype.geoPlusSigns = function () {
+	var squareSize = map(hexVal(this.hash, 0), 0, 15, 10, 25);
+	var plusSize   = squareSize * 3;
+	var plusShape  = buildPlusShape(squareSize);
+	var dx, fill, i, opacity, styles, val, x, y;
+
+	this.svg.setWidth(squareSize * 12);
+	this.svg.setHeight(squareSize * 12);
+
+	i = 0;
+	for (y = 0; y < 6; y++) {
+		for (x = 0; x < 6; x++) {
+			val     = hexVal(this.hash, i);
+			opacity = fillOpacity(val);
+			fill    = fillColor(val);
+			dx      = (y % 2 === 0) ? 0 : 1;
+
+			styles = {
+				fill: fill,
+				stroke: STROKE_COLOR,
+				'stroke-opacity': STROKE_OPACITY,
+				'fill-opacity': opacity
+			};
+
+			this.svg.group(styles).transform({
+				translate: [
+					x * plusSize - x * squareSize + dx * squareSize - squareSize,
+					y * plusSize - y * squareSize - plusSize / 2
+				]
+			}).rect(plusShape).end();
+
+			// Add an extra column on the right for tiling.
+			if (x === 0) {
+				this.svg.group(styles).transform({
+					translate: [
+						4 * plusSize - x * squareSize + dx * squareSize - squareSize,
+						y * plusSize - y * squareSize - plusSize / 2
+					]
+				}).rect(plusShape).end();
+			}
+
+			// Add an extra row on the bottom that matches the first row, for tiling
+			if (y === 0) {
+				this.svg.group(styles).transform({
+					translate: [
+						x * plusSize - x * squareSize + dx * squareSize - squareSize,
+						4 * plusSize - y * squareSize - plusSize / 2
+					]
+				}).rect(plusShape).end();
+			}
+
+			// Add an extra one at top-right and bottom-right, for tiling
+			if (x === 0 && y === 0) {
+				this.svg.group(styles).transform({
+					translate: [
+						4 * plusSize - x * squareSize + dx * squareSize - squareSize,
+						4 * plusSize - y * squareSize - plusSize / 2
+					]
+				}).rect(plusShape).end();
+			}
+
+			i++;
+		}
+	}
+};
+
+Pattern.prototype.geoXes = function () {
+	var squareSize = map(hexVal(this.hash, 0), 0, 15, 10, 25);
+	var xShape     = buildPlusShape(squareSize);
+	var xSize      = squareSize * 3 * 0.943;
+	var dy, fill, i, opacity, styles, val, x, y;
+
+	this.svg.setWidth(xSize * 3);
+	this.svg.setHeight(xSize * 3);
+
+	i = 0;
+	for (y = 0; y < 6; y++) {
+		for (x = 0; x < 6; x++) {
+			val     = hexVal(this.hash, i);
+			opacity = fillOpacity(val);
+			dy      = x % 2 === 0 ? y * xSize - xSize * 0.5 : y * xSize - xSize * 0.5 + xSize / 4;
+			fill    = fillColor(val);
+
+			styles = {
+				fill: fill,
+				opacity: opacity
+			};
+
+			this.svg.group(styles).transform({
+				translate: [
+					x * xSize / 2 - xSize / 2,
+					dy - y * xSize / 2
+				],
+				rotate: [
+					45,
+					xSize / 2,
+					xSize / 2
+				]
+			}).rect(xShape).end();
+
+			// Add an extra column on the right for tiling.
+			if (x === 0) {
+				this.svg.group(styles).transform({
+					translate: [
+						6 * xSize / 2 - xSize / 2,
+						dy - y * xSize / 2
+					],
+					rotate: [
+						45,
+						xSize / 2,
+						xSize / 2
+					]
+				}).rect(xShape).end();
+			}
+
+			// // Add an extra row on the bottom that matches the first row, for tiling.
+			if (y === 0) {
+				dy = x % 2 === 0 ? 6 * xSize - xSize / 2 : 6 * xSize - xSize / 2 + xSize / 4;
+				this.svg.group(styles).transform({
+					translate: [
+						x * xSize / 2 - xSize / 2,
+						dy - 6 * xSize / 2
+					],
+					rotate: [
+						45,
+						xSize / 2,
+						xSize / 2
+					]
+				}).rect(xShape).end();
+			}
+
+			// These can hang off the bottom, so put a row at the top for tiling.
+			if (y === 5) {
+				this.svg.group(styles).transform({
+					translate: [
+						x * xSize / 2 - xSize / 2,
+						dy - 11 * xSize / 2
+					],
+					rotate: [
+						45,
+						xSize / 2,
+						xSize / 2
+					]
+				}).rect(xShape).end();
+			}
+
+			// Add an extra one at top-right and bottom-right, for tiling
+			if (x === 0 && y === 0) {
+				this.svg.group(styles).transform({
+					translate: [
+						6 * xSize / 2 - xSize / 2,
+						dy - 6 * xSize / 2
+					],
+					rotate: [
+						45,
+						xSize / 2,
+						xSize / 2
+					]
+				}).rect(xShape).end();
+			}
+			i++;
+		}
+	}
+};
+
+Pattern.prototype.geoOverlappingCircles = function () {
+	var scale    = hexVal(this.hash, 0);
+	var diameter = map(scale, 0, 15, 25, 200);
+	var radius   = diameter / 2;
+	var circle, fill, i, opacity, styles, val, x, y;
+
+	this.svg.setWidth(radius * 6);
+	this.svg.setHeight(radius * 6);
+
+	i = 0;
+	for (y = 0; y < 6; y++) {
+		for (x = 0; x < 6; x++) {
+			val     = hexVal(this.hash, i);
+			opacity = fillOpacity(val);
+			fill    = fillColor(val);
+
+			styles = {
+				fill: fill,
+				opacity: opacity
+			};
+
+			this.svg.circle(x * radius, y * radius, radius, styles);
+
+			// Add an extra one at top-right, for tiling.
+			if (x === 0) {
+				this.svg.circle(6 * radius, y * radius, radius, styles);
+			}
+
+			// // Add an extra row at the end that matches the first row, for tiling.
+			if (y === 0) {
+				this.svg.circle(x * radius, 6 * radius, radius, styles);
+			}
+
+			// // Add an extra one at bottom-right, for tiling.
+			if (x === 0 && y === 0) {
+				this.svg.circle(6 * radius, 6 * radius, radius, styles);
+			}
+
+			i++;
+		}
+	}
+};
+
+function buildOctogonShape(squareSize) {
+	var s = squareSize;
+	var c = s * 0.33;
+	return [
+		c, 0,
+		s - c, 0,
+		s, c,
+		s, s - c,
+		s - c, s,
+		c, s,
+		0, s - c,
+		0, c,
+		c, 0
+	].join(',');
+}
+
+Pattern.prototype.geoOctogons = function () {
+	var squareSize = map(hexVal(this.hash, 0), 0, 15, 10, 60);
+	var tile       = buildOctogonShape(squareSize);
+	var fill, i, opacity, val, x, y;
+
+	this.svg.setWidth(squareSize * 6);
+	this.svg.setHeight(squareSize * 6);
+
+	i = 0;
+	for (y = 0; y < 6; y++) {
+		for (x = 0; x < 6; x++) {
+			val     = hexVal(this.hash, i);
+			opacity = fillOpacity(val);
+			fill    = fillColor(val);
+
+			this.svg.polyline(tile, {
+				fill: fill,
+				'fill-opacity': opacity,
+				stroke: STROKE_COLOR,
+				'stroke-opacity': STROKE_OPACITY
+			}).transform({
+				translate: [
+					x * squareSize,
+					y * squareSize
+				]
+			});
+
+			i += 1;
+		}
+	}
+};
+
+Pattern.prototype.geoSquares = function () {
+	var squareSize = map(hexVal(this.hash, 0), 0, 15, 10, 60);
+	var fill, i, opacity, val, x, y;
+
+	this.svg.setWidth(squareSize * 6);
+	this.svg.setHeight(squareSize * 6);
+
+	i = 0;
+	for (y = 0; y < 6; y++) {
+		for (x = 0; x < 6; x++) {
+			val     = hexVal(this.hash, i);
+			opacity = fillOpacity(val);
+			fill    = fillColor(val);
+
+			this.svg.rect(x * squareSize, y * squareSize, squareSize, squareSize, {
+				fill: fill,
+				'fill-opacity': opacity,
+				stroke: STROKE_COLOR,
+				'stroke-opacity': STROKE_OPACITY
+			});
+
+			i += 1;
+		}
+	}
+};
+
+Pattern.prototype.geoConcentricCircles = function () {
+	var scale       = hexVal(this.hash, 0);
+	var ringSize    = map(scale, 0, 15, 10, 60);
+	var strokeWidth = ringSize / 5;
+	var fill, i, opacity, val, x, y;
+
+	this.svg.setWidth((ringSize + strokeWidth) * 6);
+	this.svg.setHeight((ringSize + strokeWidth) * 6);
+
+	i = 0;
+	for (y = 0; y < 6; y++) {
+		for (x = 0; x < 6; x++) {
+			val     = hexVal(this.hash, i);
+			opacity = fillOpacity(val);
+			fill    = fillColor(val);
+
+			this.svg.circle(
+				x * ringSize + x * strokeWidth + (ringSize + strokeWidth) / 2,
+				y * ringSize + y * strokeWidth + (ringSize + strokeWidth) / 2,
+				ringSize / 2,
+				{
+					fill: 'none',
+					stroke: fill,
+					opacity: opacity,
+					'stroke-width': strokeWidth + 'px'
+				}
+			);
+
+			val     = hexVal(this.hash, 39 - i);
+			opacity = fillOpacity(val);
+			fill    = fillColor(val);
+
+			this.svg.circle(
+				x * ringSize + x * strokeWidth + (ringSize + strokeWidth) / 2,
+				y * ringSize + y * strokeWidth + (ringSize + strokeWidth) / 2,
+				ringSize / 4,
+				{
+					fill: fill,
+					'fill-opacity': opacity
+				}
+			);
+
+			i += 1;
+		}
+	}
+};
+
+Pattern.prototype.geoOverlappingRings = function () {
+	var scale       = hexVal(this.hash, 0);
+	var ringSize    = map(scale, 0, 15, 10, 60);
+	var strokeWidth = ringSize / 4;
+	var fill, i, opacity, styles, val, x, y;
+
+	this.svg.setWidth(ringSize * 6);
+	this.svg.setHeight(ringSize * 6);
+
+	i = 0;
+	for (y = 0; y < 6; y++) {
+		for (x = 0; x < 6; x++) {
+			val     = hexVal(this.hash, i);
+			opacity = fillOpacity(val);
+			fill    = fillColor(val);
+
+			styles = {
+				fill: 'none',
+				stroke: fill,
+				opacity: opacity,
+				'stroke-width': strokeWidth + 'px'
+			};
+
+			this.svg.circle(x * ringSize, y * ringSize, ringSize - strokeWidth / 2, styles);
+
+			// Add an extra one at top-right, for tiling.
+			if (x === 0) {
+				this.svg.circle(6 * ringSize, y * ringSize, ringSize - strokeWidth / 2, styles);
+			}
+
+			if (y === 0) {
+				this.svg.circle(x * ringSize, 6 * ringSize, ringSize - strokeWidth / 2, styles);
+			}
+
+			if (x === 0 && y === 0) {
+				this.svg.circle(6 * ringSize, 6 * ringSize, ringSize - strokeWidth / 2, styles);
+			}
+
+			i += 1;
+		}
+	}
+};
+
+function buildTriangleShape(sideLength, height) {
+	var halfWidth = sideLength / 2;
+	return [
+		halfWidth, 0,
+		sideLength, height,
+		0, height,
+		halfWidth, 0
+	].join(',');
+}
+
+Pattern.prototype.geoTriangles = function () {
+	var scale          = hexVal(this.hash, 0);
+	var sideLength     = map(scale, 0, 15, 15, 80);
+	var triangleHeight = sideLength / 2 * Math.sqrt(3);
+	var triangle       = buildTriangleShape(sideLength, triangleHeight);
+	var fill, i, opacity, rotation, styles, val, x, y;
+
+	this.svg.setWidth(sideLength * 3);
+	this.svg.setHeight(triangleHeight * 6);
+
+	i = 0;
+	for (y = 0; y < 6; y++) {
+		for (x = 0; x < 6; x++) {
+			val     = hexVal(this.hash, i);
+			opacity = fillOpacity(val);
+			fill    = fillColor(val);
+
+			styles = {
+				fill: fill,
+				'fill-opacity': opacity,
+				stroke: STROKE_COLOR,
+				'stroke-opacity': STROKE_OPACITY
+			};
+
+			if (y % 2 === 0) {
+				rotation = x % 2 === 0 ? 180 : 0;
+			} else {
+				rotation = x % 2 !== 0 ? 180 : 0;
+			}
+
+			this.svg.polyline(triangle, styles).transform({
+				translate: [
+					x * sideLength * 0.5 - sideLength / 2,
+					triangleHeight * y
+				],
+				rotate: [
+					rotation,
+					sideLength / 2,
+					triangleHeight / 2
+				]
+			});
+
+			// Add an extra one at top-right, for tiling.
+			if (x === 0) {
+				this.svg.polyline(triangle, styles).transform({
+					translate: [
+						6 * sideLength * 0.5 - sideLength / 2,
+						triangleHeight * y
+					],
+					rotate: [
+						rotation,
+						sideLength / 2,
+						triangleHeight / 2
+					]
+				});
+			}
+
+			i += 1;
+		}
+	}
+};
+
+function buildDiamondShape(width, height) {
+	return [
+		width / 2, 0,
+		width, height / 2,
+		width / 2, height,
+		0, height / 2
+	].join(',');
+}
+
+Pattern.prototype.geoDiamonds = function () {
+	var diamondWidth  = map(hexVal(this.hash, 0), 0, 15, 10, 50);
+	var diamondHeight = map(hexVal(this.hash, 1), 0, 15, 10, 50);
+	var diamond       = buildDiamondShape(diamondWidth, diamondHeight);
+	var dx, fill, i, opacity, styles, val, x, y;
+
+	this.svg.setWidth(diamondWidth * 6);
+	this.svg.setHeight(diamondHeight * 3);
+
+	i = 0;
+	for (y = 0; y < 6; y++) {
+		for (x = 0; x < 6; x++) {
+			val     = hexVal(this.hash, i);
+			opacity = fillOpacity(val);
+			fill    = fillColor(val);
+
+			styles = {
+				fill: fill,
+				'fill-opacity': opacity,
+				stroke: STROKE_COLOR,
+				'stroke-opacity': STROKE_OPACITY
+			};
+
+			dx = (y % 2 === 0) ? 0 : diamondWidth / 2;
+
+			this.svg.polyline(diamond, styles).transform({
+				translate: [
+					x * diamondWidth - diamondWidth / 2 + dx,
+					diamondHeight / 2 * y - diamondHeight / 2
+				]
+			});
+
+			// Add an extra one at top-right, for tiling.
+			if (x === 0) {
+				this.svg.polyline(diamond, styles).transform({
+					translate: [
+						6 * diamondWidth - diamondWidth / 2 + dx,
+						diamondHeight / 2 * y - diamondHeight / 2
+					]
+				});
+			}
+
+			// Add an extra row at the end that matches the first row, for tiling.
+			if (y === 0) {
+				this.svg.polyline(diamond, styles).transform({
+					translate: [
+						x * diamondWidth - diamondWidth / 2 + dx,
+						diamondHeight / 2 * 6 - diamondHeight / 2
+					]
+				});
+			}
+
+			// Add an extra one at bottom-right, for tiling.
+			if (x === 0 && y === 0) {
+				this.svg.polyline(diamond, styles).transform({
+					translate: [
+						6 * diamondWidth - diamondWidth / 2 + dx,
+						diamondHeight / 2 * 6 - diamondHeight / 2
+					]
+				});
+			}
+
+			i += 1;
+		}
+	}
+};
+
+Pattern.prototype.geoNestedSquares = function () {
+	var blockSize  = map(hexVal(this.hash, 0), 0, 15, 4, 12);
+	var squareSize = blockSize * 7;
+	var fill, i, opacity, styles, val, x, y;
+
+	this.svg.setWidth((squareSize + blockSize) * 6 + blockSize * 6);
+	this.svg.setHeight((squareSize + blockSize) * 6 + blockSize * 6);
+
+	i = 0;
+	for (y = 0; y < 6; y++) {
+		for (x = 0; x < 6; x++) {
+			val     = hexVal(this.hash, i);
+			opacity = fillOpacity(val);
+			fill    = fillColor(val);
+
+			styles = {
+				fill: 'none',
+				stroke: fill,
+				opacity: opacity,
+				'stroke-width': blockSize + 'px'
+			};
+
+			this.svg.rect(x * squareSize + x * blockSize * 2 + blockSize / 2,
+			              y * squareSize + y * blockSize * 2 + blockSize / 2,
+			              squareSize, squareSize, styles);
+
+			val     = hexVal(this.hash, 39 - i);
+			opacity = fillOpacity(val);
+			fill    = fillColor(val);
+
+			styles = {
+				fill: 'none',
+				stroke: fill,
+				opacity: opacity,
+				'stroke-width': blockSize + 'px'
+			};
+
+			this.svg.rect(x * squareSize + x * blockSize * 2 + blockSize / 2 + blockSize * 2,
+			              y * squareSize + y * blockSize * 2 + blockSize / 2 + blockSize * 2,
+			              blockSize * 3, blockSize * 3, styles);
+
+			i += 1;
+		}
+	}
+};
+
+function buildRightTriangleShape(sideLength) {
+	return [
+		0, 0,
+		sideLength, sideLength,
+		0, sideLength,
+		0, 0
+	].join(',');
+}
+
+function drawInnerMosaicTile(svg, x, y, triangleSize, vals) {
+	var triangle = buildRightTriangleShape(triangleSize);
+	var opacity  = fillOpacity(vals[0]);
+	var fill     = fillColor(vals[0]);
+	var styles   = {
+		stroke: STROKE_COLOR,
+		'stroke-opacity': STROKE_OPACITY,
+		'fill-opacity': opacity,
+		fill: fill
+	};
+
+	svg.polyline(triangle, styles).transform({
+		translate: [
+			x + triangleSize,
+			y
+		],
+		scale: [-1, 1]
+	});
+	svg.polyline(triangle, styles).transform({
+		translate: [
+			x + triangleSize,
+			y + triangleSize * 2
+		],
+		scale: [1, -1]
+	});
+
+	opacity = fillOpacity(vals[1]);
+	fill    = fillColor(vals[1]);
+	styles  = {
+		stroke: STROKE_COLOR,
+		'stroke-opacity': STROKE_OPACITY,
+		'fill-opacity': opacity,
+		fill: fill
+	};
+
+	svg.polyline(triangle, styles).transform({
+		translate: [
+			x + triangleSize,
+			y + triangleSize * 2
+		],
+		scale: [-1, -1]
+	});
+	svg.polyline(triangle, styles).transform({
+		translate: [
+			x + triangleSize,
+			y
+		],
+		scale: [1, 1]
+	});
+}
+
+function drawOuterMosaicTile(svg, x, y, triangleSize, val) {
+	var opacity  = fillOpacity(val);
+	var fill     = fillColor(val);
+	var triangle = buildRightTriangleShape(triangleSize);
+	var styles   = {
+		stroke: STROKE_COLOR,
+		'stroke-opacity': STROKE_OPACITY,
+		'fill-opacity': opacity,
+		fill: fill
+	};
+
+	svg.polyline(triangle, styles).transform({
+		translate: [
+			x,
+			y + triangleSize
+		],
+		scale: [1, -1]
+	});
+	svg.polyline(triangle, styles).transform({
+		translate: [
+			x + triangleSize * 2,
+			y + triangleSize
+		],
+		scale: [-1, -1]
+	});
+	svg.polyline(triangle, styles).transform({
+		translate: [
+			x,
+			y + triangleSize
+		],
+		scale: [1, 1]
+	});
+	svg.polyline(triangle, styles).transform({
+		translate: [
+			x + triangleSize * 2,
+			y + triangleSize
+		],
+		scale: [-1, 1]
+	});
+}
+
+Pattern.prototype.geoMosaicSquares = function () {
+	var triangleSize = map(hexVal(this.hash, 0), 0, 15, 15, 50);
+	var i, x, y;
+
+	this.svg.setWidth(triangleSize * 8);
+	this.svg.setHeight(triangleSize * 8);
+
+	i = 0;
+	for (y = 0; y < 4; y++) {
+		for (x = 0; x < 4; x++) {
+			if (x % 2 === 0) {
+				if (y % 2 === 0) {
+					drawOuterMosaicTile(this.svg,
+						x * triangleSize * 2,
+						y * triangleSize * 2,
+						triangleSize,
+						hexVal(this.hash, i)
+					);
+				} else {
+					drawInnerMosaicTile(this.svg,
+						x * triangleSize * 2,
+						y * triangleSize * 2,
+						triangleSize,
+						[hexVal(this.hash, i), hexVal(this.hash, i + 1)]
+					);
+				}
+			} else {
+				if (y % 2 === 0) {
+					drawInnerMosaicTile(this.svg,
+						x * triangleSize * 2,
+						y * triangleSize * 2,
+						triangleSize,
+						[hexVal(this.hash, i), hexVal(this.hash, i + 1)]
+					);
+				} else {
+					drawOuterMosaicTile(this.svg,
+						x * triangleSize * 2,
+						y * triangleSize * 2,
+						triangleSize,
+						hexVal(this.hash, i)
+					);
+				}
+			}
+
+			i += 1;
+		}
+	}
+};
+
+Pattern.prototype.geoPlaid = function () {
+	var height = 0;
+	var width  = 0;
+	var fill, i, opacity, space, stripeHeight, stripeWidth, val;
+
+	// Horizontal stripes
+	i = 0;
+	while (i < 36) {
+		space   = hexVal(this.hash, i);
+		height += space + 5;
+
+		val          = hexVal(this.hash, i + 1);
+		opacity      = fillOpacity(val);
+		fill         = fillColor(val);
+		stripeHeight = val + 5;
+
+		this.svg.rect(0, height, '100%', stripeHeight, {
+			opacity: opacity,
+			fill: fill
+		});
+
+		height += stripeHeight;
+		i += 2;
+	}
+
+	// Vertical stripes
+	i = 0;
+	while (i < 36) {
+		space  = hexVal(this.hash, i);
+		width += space + 5;
+
+		val         = hexVal(this.hash, i + 1);
+		opacity     = fillOpacity(val);
+		fill        = fillColor(val);
+		stripeWidth = val + 5;
+
+		this.svg.rect(width, 0, stripeWidth, '100%', {
+			opacity: opacity,
+			fill: fill
+		});
+
+		width += stripeWidth;
+		i += 2;
+	}
+
+	this.svg.setWidth(width);
+	this.svg.setHeight(height);
+};
+
+function buildRotatedTriangleShape(sideLength, triangleWidth) {
+	var halfHeight = sideLength / 2;
+	return [
+		0, 0,
+		triangleWidth, halfHeight,
+		0, sideLength,
+		0, 0
+	].join(',');
+}
+
+Pattern.prototype.geoTessellation = function () {
+	// 3.4.6.4 semi-regular tessellation
+	var sideLength     = map(hexVal(this.hash, 0), 0, 15, 5, 40);
+	var hexHeight      = sideLength * Math.sqrt(3);
+	var hexWidth       = sideLength * 2;
+	var triangleHeight = sideLength / 2 * Math.sqrt(3);
+	var triangle       = buildRotatedTriangleShape(sideLength, triangleHeight);
+	var tileWidth      = sideLength * 3 + triangleHeight * 2;
+	var tileHeight     = (hexHeight * 2) + (sideLength * 2);
+	var fill, i, opacity, styles, val;
+
+	this.svg.setWidth(tileWidth);
+	this.svg.setHeight(tileHeight);
+
+	for (i = 0; i < 20; i++) {
+		val     = hexVal(this.hash, i);
+		opacity = fillOpacity(val);
+		fill    = fillColor(val);
+
+		styles  = {
+			stroke: STROKE_COLOR,
+			'stroke-opacity': STROKE_OPACITY,
+			fill: fill,
+			'fill-opacity': opacity,
+			'stroke-width': 1
+		};
+
+		switch (i) {
+			case 0: // All 4 corners
+				this.svg.rect(-sideLength / 2, -sideLength / 2, sideLength, sideLength, styles);
+				this.svg.rect(tileWidth - sideLength / 2, -sideLength / 2, sideLength, sideLength, styles);
+				this.svg.rect(-sideLength / 2, tileHeight - sideLength / 2, sideLength, sideLength, styles);
+				this.svg.rect(tileWidth - sideLength / 2, tileHeight - sideLength / 2, sideLength, sideLength, styles);
+				break;
+			case 1: // Center / top square
+				this.svg.rect(hexWidth / 2 + triangleHeight, hexHeight / 2, sideLength, sideLength, styles);
+				break;
+			case 2: // Side squares
+				this.svg.rect(-sideLength / 2, tileHeight / 2 - sideLength / 2, sideLength, sideLength, styles);
+				this.svg.rect(tileWidth - sideLength / 2, tileHeight / 2 - sideLength / 2, sideLength, sideLength, styles);
+				break;
+			case 3: // Center / bottom square
+				this.svg.rect(hexWidth / 2 + triangleHeight, hexHeight * 1.5 + sideLength, sideLength, sideLength, styles);
+				break;
+			case 4: // Left top / bottom triangle
+				this.svg.polyline(triangle, styles).transform({
+					translate: [
+						sideLength / 2,
+						-sideLength / 2
+					],
+					rotate: [
+						0,
+						sideLength / 2,
+						triangleHeight / 2
+					]
+				});
+				this.svg.polyline(triangle, styles).transform({
+					translate: [
+						sideLength / 2,
+						tileHeight - -sideLength / 2
+					],
+					rotate: [
+						0,
+						sideLength / 2,
+						triangleHeight / 2
+					],
+					scale: [1, -1]
+				});
+				break;
+			case 5: // Right top / bottom triangle
+				this.svg.polyline(triangle, styles).transform({
+					translate: [
+						tileWidth - sideLength / 2,
+						-sideLength / 2
+					],
+					rotate: [
+						0,
+						sideLength / 2,
+						triangleHeight / 2
+					],
+					scale: [-1, 1]
+				});
+				this.svg.polyline(triangle, styles).transform({
+					translate: [
+						tileWidth - sideLength / 2,
+						tileHeight + sideLength / 2
+					],
+					rotate: [
+						0,
+						sideLength / 2,
+						triangleHeight / 2
+					],
+					scale: [-1, -1]
+				});
+				break;
+			case 6: // Center / top / right triangle
+				this.svg.polyline(triangle, styles).transform({
+					translate: [
+						tileWidth / 2 + sideLength / 2,
+						hexHeight / 2
+					]});
+				break;
+			case 7: // Center / top / left triangle
+				this.svg.polyline(triangle, styles).transform({
+					translate: [
+						tileWidth - tileWidth / 2 - sideLength / 2,
+						hexHeight / 2
+					],
+					scale: [-1, 1]
+				});
+				break;
+			case 8: // Center / bottom / right triangle
+				this.svg.polyline(triangle, styles).transform({
+					translate: [
+						tileWidth / 2 + sideLength / 2,
+						tileHeight - hexHeight / 2
+					],
+					scale: [1, -1]
+				});
+				break;
+			case 9: // Center / bottom / left triangle
+				this.svg.polyline(triangle, styles).transform({
+					translate: [
+						tileWidth - tileWidth / 2 - sideLength / 2,
+						tileHeight - hexHeight / 2
+					],
+					scale: [-1, -1]
+				});
+				break;
+			case 10: // Left / middle triangle
+				this.svg.polyline(triangle, styles).transform({
+					translate: [
+						sideLength / 2,
+						tileHeight / 2 - sideLength / 2
+					]
+				});
+				break;
+			case 11: // Right // middle triangle
+				this.svg.polyline(triangle, styles).transform({
+					translate: [
+						tileWidth - sideLength / 2,
+						tileHeight / 2 - sideLength / 2
+					],
+					scale: [-1, 1]
+				});
+				break;
+			case 12: // Left / top square
+				this.svg.rect(0, 0, sideLength, sideLength, styles).transform({
+					translate: [sideLength / 2, sideLength / 2],
+					rotate: [-30, 0, 0]
+				});
+				break;
+			case 13: // Right / top square
+				this.svg.rect(0, 0, sideLength, sideLength, styles).transform({
+					scale: [-1, 1],
+					translate: [-tileWidth + sideLength / 2, sideLength / 2],
+					rotate: [-30, 0, 0]
+				});
+				break;
+			case 14: // Left / center-top square
+				this.svg.rect(0, 0, sideLength, sideLength, styles).transform({
+					translate: [
+						sideLength / 2,
+						tileHeight / 2 - sideLength / 2 - sideLength
+					],
+					rotate: [30, 0, sideLength]
+				});
+				break;
+			case 15: // Right / center-top square
+				this.svg.rect(0, 0, sideLength, sideLength, styles).transform({
+					scale: [-1, 1],
+					translate: [
+						-tileWidth + sideLength / 2,
+						tileHeight / 2 - sideLength / 2  - sideLength
+					],
+					rotate: [30, 0, sideLength]
+				});
+				break;
+			case 16: // Left / center-top square
+				this.svg.rect(0, 0, sideLength, sideLength, styles).transform({
+					scale: [1, -1],
+					translate: [
+						sideLength / 2,
+						-tileHeight + tileHeight / 2 - sideLength / 2 - sideLength
+					],
+					rotate: [30, 0, sideLength]
+				});
+				break;
+			case 17: // Right / center-bottom square
+				this.svg.rect(0, 0, sideLength, sideLength, styles).transform({
+					scale: [-1, -1],
+					translate: [
+						-tileWidth + sideLength / 2,
+						-tileHeight + tileHeight / 2 - sideLength / 2 - sideLength
+					],
+					rotate: [30, 0, sideLength]
+				});
+				break;
+			case 18: // Left / bottom square
+				this.svg.rect(0, 0, sideLength, sideLength, styles).transform({
+					scale: [1, -1],
+					translate: [
+						sideLength / 2,
+						-tileHeight + sideLength / 2
+					],
+					rotate: [-30, 0, 0]
+				});
+				break;
+			case 19: // Right / bottom square
+				this.svg.rect(0, 0, sideLength, sideLength, styles).transform({
+					scale: [-1, -1],
+					translate: [
+						-tileWidth + sideLength / 2,
+						-tileHeight + sideLength / 2
+					],
+					rotate: [-30, 0, 0]
+				});
+				break;
+		}
+	}
+};
+
+}).call(this,require("buffer").Buffer)
+},{"./color":7,"./sha1":9,"./svg":10,"buffer":2,"extend":12}],9:[function(require,module,exports){
+/*
+https://github.com/creationix/git-sha1/blob/master/git-sha1.js
+
+The MIT License (MIT)
+
+Copyright (c) 2013 Tim Caswell
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
+'use strict';
+
+// A streaming interface for when nothing is passed in.
+function create() {
+
+	var h0 = 0x67452301;
+	var h1 = 0xEFCDAB89;
+	var h2 = 0x98BADCFE;
+	var h3 = 0x10325476;
+	var h4 = 0xC3D2E1F0;
+	// The first 64 bytes (16 words) is the data chunk
+	var block = new Uint32Array(80), offset = 0, shift = 24;
+	var totalLength = 0;
+
+	// We have a full block to process.  Let's do it!
+	function processBlock() {
+		// Extend the sixteen 32-bit words into eighty 32-bit words:
+		for (var i = 16; i < 80; i++) {
+			var w = block[i - 3] ^ block[i - 8] ^ block[i - 14] ^ block[i - 16];
+			block[i] = (w << 1) | (w >>> 31);
+		}
+
+		// log(block);
+
+		// Initialize hash value for this chunk:
+		var a = h0;
+		var b = h1;
+		var c = h2;
+		var d = h3;
+		var e = h4;
+		var f, k;
+
+		// Main loop:
+		for (i = 0; i < 80; i++) {
+			if (i < 20) {
+				f = d ^ (b & (c ^ d));
+				k = 0x5A827999;
+			}
+			else if (i < 40) {
+				f = b ^ c ^ d;
+				k = 0x6ED9EBA1;
+			}
+			else if (i < 60) {
+				f = (b & c) | (d & (b | c));
+				k = 0x8F1BBCDC;
+			}
+			else {
+				f = b ^ c ^ d;
+				k = 0xCA62C1D6;
+			}
+			var temp = (a << 5 | a >>> 27) + f + e + k + (block[i] | 0);
+			e = d;
+			d = c;
+			c = (b << 30 | b >>> 2);
+			b = a;
+			a = temp;
+		}
+
+		// Add this chunk's hash to result so far:
+		h0 = (h0 + a) | 0;
+		h1 = (h1 + b) | 0;
+		h2 = (h2 + c) | 0;
+		h3 = (h3 + d) | 0;
+		h4 = (h4 + e) | 0;
+
+		// The block is now reusable.
+		offset = 0;
+		for (i = 0; i < 16; i++) {
+			block[i] = 0;
+		}
+	}
+
+	function write(byte) {
+		block[offset] |= (byte & 0xff) << shift;
+		if (shift) {
+			shift -= 8;
+		}
+		else {
+			offset++;
+			shift = 24;
+		}
+		if (offset === 16) {
+			processBlock();
+		}
+	}
+
+	function updateString(string) {
+		var length = string.length;
+		totalLength += length * 8;
+		for (var i = 0; i < length; i++) {
+			write(string.charCodeAt(i));
+		}
+	}
+
+	// The user gave us more data.  Store it!
+	function update(chunk) {
+		if (typeof chunk === 'string') {
+			return updateString(chunk);
+		}
+		var length = chunk.length;
+		totalLength += length * 8;
+		for (var i = 0; i < length; i++) {
+			write(chunk[i]);
+		}
+	}
+
+	function toHex(word) {
+		var hex = '';
+		for (var i = 28; i >= 0; i -= 4) {
+			hex += ((word >> i) & 0xf).toString(16);
+		}
+		return hex;
+	}
+
+	// No more data will come, pad the block, process and return the result.
+	function digest() {
+		// Pad
+		write(0x80);
+		if (offset > 14 || (offset === 14 && shift < 24)) {
+			processBlock();
+		}
+		offset = 14;
+		shift = 24;
+
+		// 64-bit length big-endian
+		write(0x00); // numbers this big aren't accurate in javascript anyway
+		write(0x00); // ..So just hard-code to zero.
+		write(totalLength > 0xffffffffff ? totalLength / 0x10000000000 : 0x00);
+		write(totalLength > 0xffffffff ? totalLength / 0x100000000 : 0x00);
+		for (var s = 24; s >= 0; s -= 8) {
+			write(totalLength >> s);
+		}
+
+		// At this point one last processBlock() should trigger and we can pull out the result.
+		return toHex(h0) +
+		toHex(h1) +
+		toHex(h2) +
+		toHex(h3) +
+		toHex(h4);
+	}
+
+	return { update: update, digest: digest };
+}
+
+// Input chunks must be either arrays of bytes or "raw" encoded strings
+module.exports = function sha1(buffer) {
+	if (buffer === undefined) {
+		return create();
+	}
+	var shasum = create();
+	shasum.update(buffer);
+	return shasum.digest();
+};
+
+},{}],10:[function(require,module,exports){
+'use strict';
+
+var extend = require('extend');
+var XMLNode = require('./xml');
+
+function SVG() {
+	this.width = 100;
+	this.height = 100;
+	this.svg = XMLNode('svg');
+	this.context = []; // Track nested nodes
+	this.setAttributes(this.svg, {
+		xmlns: 'http://www.w3.org/2000/svg',
+		width: this.width,
+		height: this.height
+	});
+
+	return this;
+}
+
+module.exports = SVG;
+
+// This is a hack so groups work.
+SVG.prototype.currentContext = function () {
+	return this.context[this.context.length - 1] || this.svg;
+};
+
+// This is a hack so groups work.
+SVG.prototype.end = function () {
+	this.context.pop();
+	return this;
+};
+
+SVG.prototype.currentNode = function () {
+	var context = this.currentContext();
+	return context.lastChild || context;
+};
+
+SVG.prototype.transform = function (transformations) {
+	this.currentNode().setAttribute('transform',
+		Object.keys(transformations).map(function (transformation) {
+			return transformation + '(' + transformations[transformation].join(',') + ')';
+		}).join(' ')
+	);
+	return this;
+};
+
+SVG.prototype.setAttributes = function (el, attrs) {
+	Object.keys(attrs).forEach(function (attr) {
+		el.setAttribute(attr, attrs[attr]);
+	});
+};
+
+SVG.prototype.setWidth = function (width) {
+	this.svg.setAttribute('width', Math.floor(width));
+};
+
+SVG.prototype.setHeight = function (height) {
+	this.svg.setAttribute('height', Math.floor(height));
+};
+
+SVG.prototype.toString = function () {
+	return this.svg.toString();
+};
+
+SVG.prototype.rect = function (x, y, width, height, args) {
+	// Accept array first argument
+	var self = this;
+	if (Array.isArray(x)) {
+		x.forEach(function (a) {
+			self.rect.apply(self, a.concat(args));
+		});
+		return this;
+	}
+
+	var rect = XMLNode('rect');
+	this.currentContext().appendChild(rect);
+	this.setAttributes(rect, extend({
+		x: x,
+		y: y,
+		width: width,
+		height: height
+	}, args));
+
+	return this;
+};
+
+SVG.prototype.circle = function (cx, cy, r, args) {
+	var circle = XMLNode('circle');
+	this.currentContext().appendChild(circle);
+	this.setAttributes(circle, extend({
+		cx: cx,
+		cy: cy,
+		r: r
+	}, args));
+
+	return this;
+};
+
+SVG.prototype.path = function (str, args) {
+	var path = XMLNode('path');
+	this.currentContext().appendChild(path);
+	this.setAttributes(path, extend({
+		d: str
+	}, args));
+
+	return this;
+};
+
+SVG.prototype.polyline = function (str, args) {
+	// Accept array first argument
+	var self = this;
+	if (Array.isArray(str)) {
+		str.forEach(function (s) {
+			self.polyline(s, args);
+		});
+		return this;
+	}
+
+	var polyline = XMLNode('polyline');
+	this.currentContext().appendChild(polyline);
+	this.setAttributes(polyline, extend({
+		points: str
+	}, args));
+
+	return this;
+};
+
+// group and context are hacks
+SVG.prototype.group = function (args) {
+	var group = XMLNode('g');
+	this.currentContext().appendChild(group);
+	this.context.push(group);
+	this.setAttributes(group, extend({}, args));
+	return this;
+};
+
+},{"./xml":11,"extend":12}],11:[function(require,module,exports){
+'use strict';
+
+var XMLNode = module.exports = function (tagName) {
+	if (!(this instanceof XMLNode)) {
+		return new XMLNode(tagName);
+	}
+
+	this.tagName = tagName;
+	this.attributes = Object.create(null);
+	this.children = [];
+	this.lastChild = null;
+
+	return this;
+};
+
+XMLNode.prototype.appendChild = function (child) {
+	this.children.push(child);
+	this.lastChild = child;
+
+	return this;
+};
+
+XMLNode.prototype.setAttribute = function (name, value) {
+	this.attributes[name] = value;
+
+	return this;
+};
+
+XMLNode.prototype.toString = function () {
+	var self = this;
+
+	return [
+		'<',
+		self.tagName,
+		Object.keys(self.attributes).map(function (attr) {
+			return [
+				' ',
+				attr,
+				'="',
+				self.attributes[attr],
+				'"'
+			].join('');
+		}).join(''),
+		'>',
+		self.children.map(function (child) {
+			return child.toString();
+		}).join(''),
+		'</',
+		self.tagName,
+		'>'
+	].join('');
+};
+
+},{}],12:[function(require,module,exports){
+var hasOwn = Object.prototype.hasOwnProperty;
+var toString = Object.prototype.toString;
+
+function isPlainObject(obj) {
+	if (!obj || toString.call(obj) !== '[object Object]' || obj.nodeType || obj.setInterval)
+		return false;
+
+	var has_own_constructor = hasOwn.call(obj, 'constructor');
+	var has_is_property_of_method = hasOwn.call(obj.constructor.prototype, 'isPrototypeOf');
+	// Not own constructor property must be Object
+	if (obj.constructor && !has_own_constructor && !has_is_property_of_method)
+		return false;
+
+	// Own properties are enumerated firstly, so to speed up,
+	// if last one is own, then all properties are own.
+	var key;
+	for ( key in obj ) {}
+
+	return key === undefined || hasOwn.call( obj, key );
+};
+
+module.exports = function extend() {
+	var options, name, src, copy, copyIsArray, clone,
+	    target = arguments[0] || {},
+	    i = 1,
+	    length = arguments.length,
+	    deep = false;
+
+	// Handle a deep copy situation
+	if ( typeof target === "boolean" ) {
+		deep = target;
+		target = arguments[1] || {};
+		// skip the boolean and the target
+		i = 2;
+	}
+
+	// Handle case when target is a string or something (possible in deep copy)
+	if ( typeof target !== "object" && typeof target !== "function") {
+		target = {};
+	}
+
+	for ( ; i < length; i++ ) {
+		// Only deal with non-null/undefined values
+		if ( (options = arguments[ i ]) != null ) {
+			// Extend the base object
+			for ( name in options ) {
+				src = target[ name ];
+				copy = options[ name ];
+
+				// Prevent never-ending loop
+				if ( target === copy ) {
+					continue;
+				}
+
+				// Recurse if we're merging plain objects or arrays
+				if ( deep && copy && ( isPlainObject(copy) || (copyIsArray = Array.isArray(copy)) ) ) {
+					if ( copyIsArray ) {
+						copyIsArray = false;
+						clone = src && Array.isArray(src) ? src : [];
+
+					} else {
+						clone = src && isPlainObject(src) ? src : {};
+					}
+
+					// Never move original objects, clone them
+					target[ name ] = extend( deep, clone, copy );
+
+				// Don't bring in undefined values
+				} else if ( copy !== undefined ) {
+					target[ name ] = copy;
+				}
+			}
+		}
+	}
+
+	// Return the modified object
+	return target;
+};
+
+},{}],13:[function(require,module,exports){
+/*!
+ * jQuery JavaScript Library v2.1.3
  * http://jquery.com/
  *
  * Includes Sizzle.js
@@ -9,19 +3597,19 @@
  * Released under the MIT license
  * http://jquery.org/license
  *
- * Date: 2014-05-01T17:11Z
+ * Date: 2014-12-18T15:11Z
  */
 
 (function( global, factory ) {
 
 	if ( typeof module === "object" && typeof module.exports === "object" ) {
-		// For CommonJS and CommonJS-like environments where a proper window is present,
-		// execute the factory and get jQuery
-		// For environments that do not inherently posses a window with a document
-		// (such as Node.js), expose a jQuery-making factory as module.exports
-		// This accentuates the need for the creation of a real window
+		// For CommonJS and CommonJS-like environments where a proper `window`
+		// is present, execute the factory and get jQuery.
+		// For environments that do not have a `window` with a `document`
+		// (such as Node.js), expose a factory as module.exports.
+		// This accentuates the need for the creation of a real `window`.
 		// e.g. var jQuery = require("jquery")(window);
-		// See ticket #14549 for more info
+		// See ticket #14549 for more info.
 		module.exports = global.document ?
 			factory( global, true ) :
 			function( w ) {
@@ -37,10 +3625,10 @@
 // Pass this if window is not defined yet
 }(typeof window !== "undefined" ? window : this, function( window, noGlobal ) {
 
-// Can't do this because several apps including ASP.NET trace
+// Support: Firefox 18+
+// Can't be in strict mode, several libs including ASP.NET trace
 // the stack via arguments.caller.callee and Firefox dies if
 // you try to trace through "use strict" call chains. (#13335)
-// Support: Firefox 18+
 //
 
 var arr = [];
@@ -67,7 +3655,7 @@ var
 	// Use the correct document accordingly with window argument (sandbox)
 	document = window.document,
 
-	version = "2.1.1",
+	version = "2.1.3",
 
 	// Define a local copy of jQuery
 	jQuery = function( selector, context ) {
@@ -185,7 +3773,7 @@ jQuery.extend = jQuery.fn.extend = function() {
 	if ( typeof target === "boolean" ) {
 		deep = target;
 
-		// skip the boolean and the target
+		// Skip the boolean and the target
 		target = arguments[ i ] || {};
 		i++;
 	}
@@ -195,7 +3783,7 @@ jQuery.extend = jQuery.fn.extend = function() {
 		target = {};
 	}
 
-	// extend jQuery itself if only one argument is passed
+	// Extend jQuery itself if only one argument is passed
 	if ( i === length ) {
 		target = this;
 		i--;
@@ -252,9 +3840,6 @@ jQuery.extend({
 
 	noop: function() {},
 
-	// See test/unit/core.js for details concerning isFunction.
-	// Since version 1.3, DOM methods and functions like alert
-	// aren't supported. They return false on IE (#2968).
 	isFunction: function( obj ) {
 		return jQuery.type(obj) === "function";
 	},
@@ -269,7 +3854,8 @@ jQuery.extend({
 		// parseFloat NaNs numeric-cast false positives (null|true|false|"")
 		// ...but misinterprets leading-number strings, particularly hex literals ("0x...")
 		// subtraction forces infinities to NaN
-		return !jQuery.isArray( obj ) && obj - parseFloat( obj ) >= 0;
+		// adding 1 corrects loss of precision from parseFloat (#15100)
+		return !jQuery.isArray( obj ) && (obj - parseFloat( obj ) + 1) >= 0;
 	},
 
 	isPlainObject: function( obj ) {
@@ -303,7 +3889,7 @@ jQuery.extend({
 		if ( obj == null ) {
 			return obj + "";
 		}
-		// Support: Android < 4.0, iOS < 6 (functionish RegExp)
+		// Support: Android<4.0, iOS<6 (functionish RegExp)
 		return typeof obj === "object" || typeof obj === "function" ?
 			class2type[ toString.call(obj) ] || "object" :
 			typeof obj;
@@ -333,6 +3919,7 @@ jQuery.extend({
 	},
 
 	// Convert dashed to camelCase; used by the css and data modules
+	// Support: IE9-11+
 	// Microsoft forgot to hump their vendor prefix (#9572)
 	camelCase: function( string ) {
 		return string.replace( rmsPrefix, "ms-" ).replace( rdashAlpha, fcamelCase );
@@ -548,14 +4135,14 @@ function isArraylike( obj ) {
 }
 var Sizzle =
 /*!
- * Sizzle CSS Selector Engine v1.10.19
+ * Sizzle CSS Selector Engine v2.2.0-pre
  * http://sizzlejs.com/
  *
- * Copyright 2013 jQuery Foundation, Inc. and other contributors
+ * Copyright 2008, 2014 jQuery Foundation, Inc. and other contributors
  * Released under the MIT license
  * http://jquery.org/license
  *
- * Date: 2014-04-18
+ * Date: 2014-12-16
  */
 (function( window ) {
 
@@ -582,7 +4169,7 @@ var i,
 	contains,
 
 	// Instance-specific data
-	expando = "sizzle" + -(new Date()),
+	expando = "sizzle" + 1 * new Date(),
 	preferredDoc = window.document,
 	dirruns = 0,
 	done = 0,
@@ -597,7 +4184,6 @@ var i,
 	},
 
 	// General-purpose constants
-	strundefined = typeof undefined,
 	MAX_NEGATIVE = 1 << 31,
 
 	// Instance methods
@@ -607,12 +4193,13 @@ var i,
 	push_native = arr.push,
 	push = arr.push,
 	slice = arr.slice,
-	// Use a stripped-down indexOf if we can't use a native one
-	indexOf = arr.indexOf || function( elem ) {
+	// Use a stripped-down indexOf as it's faster than native
+	// http://jsperf.com/thor-indexof-vs-for/5
+	indexOf = function( list, elem ) {
 		var i = 0,
-			len = this.length;
+			len = list.length;
 		for ( ; i < len; i++ ) {
-			if ( this[i] === elem ) {
+			if ( list[i] === elem ) {
 				return i;
 			}
 		}
@@ -652,6 +4239,7 @@ var i,
 		")\\)|)",
 
 	// Leading and non-escaped trailing whitespace, capturing some non-whitespace characters preceding the latter
+	rwhitespace = new RegExp( whitespace + "+", "g" ),
 	rtrim = new RegExp( "^" + whitespace + "+|((?:^|[^\\\\])(?:\\\\.)*)" + whitespace + "+$", "g" ),
 
 	rcomma = new RegExp( "^" + whitespace + "*," + whitespace + "*" ),
@@ -703,6 +4291,14 @@ var i,
 				String.fromCharCode( high + 0x10000 ) :
 				// Supplemental Plane codepoint (surrogate pair)
 				String.fromCharCode( high >> 10 | 0xD800, high & 0x3FF | 0xDC00 );
+	},
+
+	// Used for iframes
+	// See setDocument()
+	// Removing the function wrapper causes a "Permission Denied"
+	// error in IE
+	unloadHandler = function() {
+		setDocument();
 	};
 
 // Optimize for push.apply( _, NodeList )
@@ -745,19 +4341,18 @@ function Sizzle( selector, context, results, seed ) {
 
 	context = context || document;
 	results = results || [];
+	nodeType = context.nodeType;
 
-	if ( !selector || typeof selector !== "string" ) {
+	if ( typeof selector !== "string" || !selector ||
+		nodeType !== 1 && nodeType !== 9 && nodeType !== 11 ) {
+
 		return results;
 	}
 
-	if ( (nodeType = context.nodeType) !== 1 && nodeType !== 9 ) {
-		return [];
-	}
+	if ( !seed && documentIsHTML ) {
 
-	if ( documentIsHTML && !seed ) {
-
-		// Shortcuts
-		if ( (match = rquickExpr.exec( selector )) ) {
+		// Try to shortcut find operations when possible (e.g., not under DocumentFragment)
+		if ( nodeType !== 11 && (match = rquickExpr.exec( selector )) ) {
 			// Speed-up: Sizzle("#ID")
 			if ( (m = match[1]) ) {
 				if ( nodeType === 9 ) {
@@ -789,7 +4384,7 @@ function Sizzle( selector, context, results, seed ) {
 				return results;
 
 			// Speed-up: Sizzle(".CLASS")
-			} else if ( (m = match[3]) && support.getElementsByClassName && context.getElementsByClassName ) {
+			} else if ( (m = match[3]) && support.getElementsByClassName ) {
 				push.apply( results, context.getElementsByClassName( m ) );
 				return results;
 			}
@@ -799,7 +4394,7 @@ function Sizzle( selector, context, results, seed ) {
 		if ( support.qsa && (!rbuggyQSA || !rbuggyQSA.test( selector )) ) {
 			nid = old = expando;
 			newContext = context;
-			newSelector = nodeType === 9 && selector;
+			newSelector = nodeType !== 1 && selector;
 
 			// qSA works strangely on Element-rooted queries
 			// We can work around this by specifying an extra ID on the root
@@ -986,7 +4581,7 @@ function createPositionalPseudo( fn ) {
  * @returns {Element|Object|Boolean} The input node if acceptable, otherwise a falsy value
  */
 function testContext( context ) {
-	return context && typeof context.getElementsByTagName !== strundefined && context;
+	return context && typeof context.getElementsByTagName !== "undefined" && context;
 }
 
 // Expose support vars for convenience
@@ -1010,9 +4605,8 @@ isXML = Sizzle.isXML = function( elem ) {
  * @returns {Object} Returns the current document
  */
 setDocument = Sizzle.setDocument = function( node ) {
-	var hasCompare,
-		doc = node ? node.ownerDocument || node : preferredDoc,
-		parent = doc.defaultView;
+	var hasCompare, parent,
+		doc = node ? node.ownerDocument || node : preferredDoc;
 
 	// If no document and documentElement is available, return
 	if ( doc === document || doc.nodeType !== 9 || !doc.documentElement ) {
@@ -1022,9 +4616,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 	// Set our document
 	document = doc;
 	docElem = doc.documentElement;
-
-	// Support tests
-	documentIsHTML = !isXML( doc );
+	parent = doc.defaultView;
 
 	// Support: IE>8
 	// If iframe document is assigned to "document" variable and if iframe has been reloaded,
@@ -1033,21 +4625,22 @@ setDocument = Sizzle.setDocument = function( node ) {
 	if ( parent && parent !== parent.top ) {
 		// IE11 does not have attachEvent, so all must suffer
 		if ( parent.addEventListener ) {
-			parent.addEventListener( "unload", function() {
-				setDocument();
-			}, false );
+			parent.addEventListener( "unload", unloadHandler, false );
 		} else if ( parent.attachEvent ) {
-			parent.attachEvent( "onunload", function() {
-				setDocument();
-			});
+			parent.attachEvent( "onunload", unloadHandler );
 		}
 	}
+
+	/* Support tests
+	---------------------------------------------------------------------- */
+	documentIsHTML = !isXML( doc );
 
 	/* Attributes
 	---------------------------------------------------------------------- */
 
 	// Support: IE<8
-	// Verify that getAttribute really returns attributes and not properties (excepting IE8 booleans)
+	// Verify that getAttribute really returns attributes and not properties
+	// (excepting IE8 booleans)
 	support.attributes = assert(function( div ) {
 		div.className = "i";
 		return !div.getAttribute("className");
@@ -1062,17 +4655,8 @@ setDocument = Sizzle.setDocument = function( node ) {
 		return !div.getElementsByTagName("*").length;
 	});
 
-	// Check if getElementsByClassName can be trusted
-	support.getElementsByClassName = rnative.test( doc.getElementsByClassName ) && assert(function( div ) {
-		div.innerHTML = "<div class='a'></div><div class='a i'></div>";
-
-		// Support: Safari<4
-		// Catch class over-caching
-		div.firstChild.className = "i";
-		// Support: Opera<10
-		// Catch gEBCN failure to find non-leading classes
-		return div.getElementsByClassName("i").length === 2;
-	});
+	// Support: IE<9
+	support.getElementsByClassName = rnative.test( doc.getElementsByClassName );
 
 	// Support: IE<10
 	// Check if getElementById returns elements by name
@@ -1086,7 +4670,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 	// ID find and filter
 	if ( support.getById ) {
 		Expr.find["ID"] = function( id, context ) {
-			if ( typeof context.getElementById !== strundefined && documentIsHTML ) {
+			if ( typeof context.getElementById !== "undefined" && documentIsHTML ) {
 				var m = context.getElementById( id );
 				// Check parentNode to catch when Blackberry 4.6 returns
 				// nodes that are no longer in the document #6963
@@ -1107,7 +4691,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 		Expr.filter["ID"] =  function( id ) {
 			var attrId = id.replace( runescape, funescape );
 			return function( elem ) {
-				var node = typeof elem.getAttributeNode !== strundefined && elem.getAttributeNode("id");
+				var node = typeof elem.getAttributeNode !== "undefined" && elem.getAttributeNode("id");
 				return node && node.value === attrId;
 			};
 		};
@@ -1116,14 +4700,20 @@ setDocument = Sizzle.setDocument = function( node ) {
 	// Tag
 	Expr.find["TAG"] = support.getElementsByTagName ?
 		function( tag, context ) {
-			if ( typeof context.getElementsByTagName !== strundefined ) {
+			if ( typeof context.getElementsByTagName !== "undefined" ) {
 				return context.getElementsByTagName( tag );
+
+			// DocumentFragment nodes don't have gEBTN
+			} else if ( support.qsa ) {
+				return context.querySelectorAll( tag );
 			}
 		} :
+
 		function( tag, context ) {
 			var elem,
 				tmp = [],
 				i = 0,
+				// By happy coincidence, a (broken) gEBTN appears on DocumentFragment nodes too
 				results = context.getElementsByTagName( tag );
 
 			// Filter out possible comments
@@ -1141,7 +4731,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 
 	// Class
 	Expr.find["CLASS"] = support.getElementsByClassName && function( className, context ) {
-		if ( typeof context.getElementsByClassName !== strundefined && documentIsHTML ) {
+		if ( documentIsHTML ) {
 			return context.getElementsByClassName( className );
 		}
 	};
@@ -1170,13 +4760,15 @@ setDocument = Sizzle.setDocument = function( node ) {
 			// setting a boolean content attribute,
 			// since its presence should be enough
 			// http://bugs.jquery.com/ticket/12359
-			div.innerHTML = "<select msallowclip=''><option selected=''></option></select>";
+			docElem.appendChild( div ).innerHTML = "<a id='" + expando + "'></a>" +
+				"<select id='" + expando + "-\f]' msallowcapture=''>" +
+				"<option selected=''></option></select>";
 
 			// Support: IE8, Opera 11-12.16
 			// Nothing should be selected when empty strings follow ^= or $= or *=
 			// The test attribute must be unknown in Opera but "safe" for WinRT
 			// http://msdn.microsoft.com/en-us/library/ie/hh465388.aspx#attribute_section
-			if ( div.querySelectorAll("[msallowclip^='']").length ) {
+			if ( div.querySelectorAll("[msallowcapture^='']").length ) {
 				rbuggyQSA.push( "[*^$]=" + whitespace + "*(?:''|\"\")" );
 			}
 
@@ -1186,11 +4778,23 @@ setDocument = Sizzle.setDocument = function( node ) {
 				rbuggyQSA.push( "\\[" + whitespace + "*(?:value|" + booleans + ")" );
 			}
 
+			// Support: Chrome<29, Android<4.2+, Safari<7.0+, iOS<7.0+, PhantomJS<1.9.7+
+			if ( !div.querySelectorAll( "[id~=" + expando + "-]" ).length ) {
+				rbuggyQSA.push("~=");
+			}
+
 			// Webkit/Opera - :checked should return selected option elements
 			// http://www.w3.org/TR/2011/REC-css3-selectors-20110929/#checked
 			// IE8 throws error here and will not see later tests
 			if ( !div.querySelectorAll(":checked").length ) {
 				rbuggyQSA.push(":checked");
+			}
+
+			// Support: Safari 8+, iOS 8+
+			// https://bugs.webkit.org/show_bug.cgi?id=136851
+			// In-page `selector#id sibing-combinator selector` fails
+			if ( !div.querySelectorAll( "a#" + expando + "+*" ).length ) {
+				rbuggyQSA.push(".#.+[+~]");
 			}
 		});
 
@@ -1308,7 +4912,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 
 			// Maintain original order
 			return sortInput ?
-				( indexOf.call( sortInput, a ) - indexOf.call( sortInput, b ) ) :
+				( indexOf( sortInput, a ) - indexOf( sortInput, b ) ) :
 				0;
 		}
 
@@ -1335,7 +4939,7 @@ setDocument = Sizzle.setDocument = function( node ) {
 				aup ? -1 :
 				bup ? 1 :
 				sortInput ?
-				( indexOf.call( sortInput, a ) - indexOf.call( sortInput, b ) ) :
+				( indexOf( sortInput, a ) - indexOf( sortInput, b ) ) :
 				0;
 
 		// If the nodes are siblings, we can do a quick check
@@ -1398,7 +5002,7 @@ Sizzle.matchesSelector = function( elem, expr ) {
 					elem.document && elem.document.nodeType !== 11 ) {
 				return ret;
 			}
-		} catch(e) {}
+		} catch (e) {}
 	}
 
 	return Sizzle( expr, document, null, [ elem ] ).length > 0;
@@ -1617,7 +5221,7 @@ Expr = Sizzle.selectors = {
 			return pattern ||
 				(pattern = new RegExp( "(^|" + whitespace + ")" + className + "(" + whitespace + "|$)" )) &&
 				classCache( className, function( elem ) {
-					return pattern.test( typeof elem.className === "string" && elem.className || typeof elem.getAttribute !== strundefined && elem.getAttribute("class") || "" );
+					return pattern.test( typeof elem.className === "string" && elem.className || typeof elem.getAttribute !== "undefined" && elem.getAttribute("class") || "" );
 				});
 		},
 
@@ -1639,7 +5243,7 @@ Expr = Sizzle.selectors = {
 					operator === "^=" ? check && result.indexOf( check ) === 0 :
 					operator === "*=" ? check && result.indexOf( check ) > -1 :
 					operator === "$=" ? check && result.slice( -check.length ) === check :
-					operator === "~=" ? ( " " + result + " " ).indexOf( check ) > -1 :
+					operator === "~=" ? ( " " + result.replace( rwhitespace, " " ) + " " ).indexOf( check ) > -1 :
 					operator === "|=" ? result === check || result.slice( 0, check.length + 1 ) === check + "-" :
 					false;
 			};
@@ -1759,7 +5363,7 @@ Expr = Sizzle.selectors = {
 							matched = fn( seed, argument ),
 							i = matched.length;
 						while ( i-- ) {
-							idx = indexOf.call( seed, matched[i] );
+							idx = indexOf( seed, matched[i] );
 							seed[ idx ] = !( matches[ idx ] = matched[i] );
 						}
 					}) :
@@ -1798,6 +5402,8 @@ Expr = Sizzle.selectors = {
 				function( elem, context, xml ) {
 					input[0] = elem;
 					matcher( input, null, xml, results );
+					// Don't keep the element (issue #299)
+					input[0] = null;
 					return !results.pop();
 				};
 		}),
@@ -1809,6 +5415,7 @@ Expr = Sizzle.selectors = {
 		}),
 
 		"contains": markFunction(function( text ) {
+			text = text.replace( runescape, funescape );
 			return function( elem ) {
 				return ( elem.textContent || elem.innerText || getText( elem ) ).indexOf( text ) > -1;
 			};
@@ -2230,7 +5837,7 @@ function setMatcher( preFilter, selector, matcher, postFilter, postFinder, postS
 				i = matcherOut.length;
 				while ( i-- ) {
 					if ( (elem = matcherOut[i]) &&
-						(temp = postFinder ? indexOf.call( seed, elem ) : preMap[i]) > -1 ) {
+						(temp = postFinder ? indexOf( seed, elem ) : preMap[i]) > -1 ) {
 
 						seed[temp] = !(results[temp] = elem);
 					}
@@ -2265,13 +5872,16 @@ function matcherFromTokens( tokens ) {
 			return elem === checkContext;
 		}, implicitRelative, true ),
 		matchAnyContext = addCombinator( function( elem ) {
-			return indexOf.call( checkContext, elem ) > -1;
+			return indexOf( checkContext, elem ) > -1;
 		}, implicitRelative, true ),
 		matchers = [ function( elem, context, xml ) {
-			return ( !leadingRelative && ( xml || context !== outermostContext ) ) || (
+			var ret = ( !leadingRelative && ( xml || context !== outermostContext ) ) || (
 				(checkContext = context).nodeType ?
 					matchContext( elem, context, xml ) :
 					matchAnyContext( elem, context, xml ) );
+			// Avoid hanging onto element (issue #299)
+			checkContext = null;
+			return ret;
 		} ];
 
 	for ( ; i < len; i++ ) {
@@ -2521,7 +6131,7 @@ select = Sizzle.select = function( selector, context, results, seed ) {
 // Sort stability
 support.sortStable = expando.split("").sort( sortOrder ).join("") === expando;
 
-// Support: Chrome<14
+// Support: Chrome 14-35+
 // Always assume duplicates if they aren't passed to the comparison function
 support.detectDuplicates = !!hasDuplicate;
 
@@ -2730,7 +6340,7 @@ var rootjQuery,
 				if ( match[1] ) {
 					context = context instanceof jQuery ? context[0] : context;
 
-					// scripts is true for back-compat
+					// Option to run scripts is true for back-compat
 					// Intentionally let the error be thrown if parseHTML is not present
 					jQuery.merge( this, jQuery.parseHTML(
 						match[1],
@@ -2758,8 +6368,8 @@ var rootjQuery,
 				} else {
 					elem = document.getElementById( match[2] );
 
-					// Check parentNode to catch when Blackberry 4.6 returns
-					// nodes that are no longer in the document #6963
+					// Support: Blackberry 4.6
+					// gEBID returns nodes no longer in the document (#6963)
 					if ( elem && elem.parentNode ) {
 						// Inject the element directly into the jQuery object
 						this.length = 1;
@@ -2812,7 +6422,7 @@ rootjQuery = jQuery( document );
 
 
 var rparentsprev = /^(?:parents|prev(?:Until|All))/,
-	// methods guaranteed to produce a unique set when starting from a unique set
+	// Methods guaranteed to produce a unique set when starting from a unique set
 	guaranteedUnique = {
 		children: true,
 		contents: true,
@@ -2892,8 +6502,7 @@ jQuery.fn.extend({
 		return this.pushStack( matched.length > 1 ? jQuery.unique( matched ) : matched );
 	},
 
-	// Determine the position of an element within
-	// the matched set of elements
+	// Determine the position of an element within the set
 	index: function( elem ) {
 
 		// No argument, return index in parent
@@ -2901,7 +6510,7 @@ jQuery.fn.extend({
 			return ( this[ 0 ] && this[ 0 ].parentNode ) ? this.first().prevAll().length : -1;
 		}
 
-		// index in selector
+		// Index in selector
 		if ( typeof elem === "string" ) {
 			return indexOf.call( jQuery( elem ), this[ 0 ] );
 		}
@@ -3317,7 +6926,7 @@ jQuery.extend({
 
 			progressValues, progressContexts, resolveContexts;
 
-		// add listeners to Deferred subordinates; treat others as resolved
+		// Add listeners to Deferred subordinates; treat others as resolved
 		if ( length > 1 ) {
 			progressValues = new Array( length );
 			progressContexts = new Array( length );
@@ -3334,7 +6943,7 @@ jQuery.extend({
 			}
 		}
 
-		// if we're not waiting on anything, resolve the master
+		// If we're not waiting on anything, resolve the master
 		if ( !remaining ) {
 			deferred.resolveWith( resolveContexts, resolveValues );
 		}
@@ -3413,7 +7022,7 @@ jQuery.ready.promise = function( obj ) {
 		readyList = jQuery.Deferred();
 
 		// Catch cases where $(document).ready() is called after the browser event has already occurred.
-		// we once tried to use readyState "interactive" here, but it caused issues like the one
+		// We once tried to use readyState "interactive" here, but it caused issues like the one
 		// discovered by ChrisS here: http://bugs.jquery.com/ticket/12282#comment:15
 		if ( document.readyState === "complete" ) {
 			// Handle it asynchronously to allow scripts the opportunity to delay ready
@@ -3507,7 +7116,7 @@ jQuery.acceptData = function( owner ) {
 
 
 function Data() {
-	// Support: Android < 4,
+	// Support: Android<4,
 	// Old WebKit does not have Object.preventExtensions/freeze method,
 	// return new empty object instead with no [[set]] accessor
 	Object.defineProperty( this.cache = {}, 0, {
@@ -3516,7 +7125,7 @@ function Data() {
 		}
 	});
 
-	this.expando = jQuery.expando + Math.random();
+	this.expando = jQuery.expando + Data.uid++;
 }
 
 Data.uid = 1;
@@ -3544,7 +7153,7 @@ Data.prototype = {
 				descriptor[ this.expando ] = { value: unlock };
 				Object.defineProperties( owner, descriptor );
 
-			// Support: Android < 4
+			// Support: Android<4
 			// Fallback to a less secure definition
 			} catch ( e ) {
 				descriptor[ this.expando ] = unlock;
@@ -3684,17 +7293,16 @@ var data_user = new Data();
 
 
 
-/*
-	Implementation Summary
+//	Implementation Summary
+//
+//	1. Enforce API surface and semantic compatibility with 1.9.x branch
+//	2. Improve the module's maintainability by reducing the storage
+//		paths to a single mechanism.
+//	3. Use the same single mechanism to support "private" and "user" data.
+//	4. _Never_ expose "private" data to user code (TODO: Drop _data, _removeData)
+//	5. Avoid exposing implementation details on user objects (eg. expando properties)
+//	6. Provide a clear path for implementation upgrade to WeakMap in 2014
 
-	1. Enforce API surface and semantic compatibility with 1.9.x branch
-	2. Improve the module's maintainability by reducing the storage
-		paths to a single mechanism.
-	3. Use the same single mechanism to support "private" and "user" data.
-	4. _Never_ expose "private" data to user code (TODO: Drop _data, _removeData)
-	5. Avoid exposing implementation details on user objects (eg. expando properties)
-	6. Provide a clear path for implementation upgrade to WeakMap in 2014
-*/
 var rbrace = /^(?:\{[\w\W]*\}|\[[\w\W]*\])$/,
 	rmultiDash = /([A-Z])/g;
 
@@ -3899,7 +7507,7 @@ jQuery.extend({
 				queue.unshift( "inprogress" );
 			}
 
-			// clear up the last queue stop function
+			// Clear up the last queue stop function
 			delete hooks.stop;
 			fn.call( elem, next, hooks );
 		}
@@ -3909,7 +7517,7 @@ jQuery.extend({
 		}
 	},
 
-	// not intended for public consumption - generates a queueHooks object, or returns the current one
+	// Not public - generate a queueHooks object, or return the current one
 	_queueHooks: function( elem, type ) {
 		var key = type + "queueHooks";
 		return data_priv.get( elem, key ) || data_priv.access( elem, key, {
@@ -3939,7 +7547,7 @@ jQuery.fn.extend({
 			this.each(function() {
 				var queue = jQuery.queue( this, type, data );
 
-				// ensure a hooks for this queue
+				// Ensure a hooks for this queue
 				jQuery._queueHooks( this, type );
 
 				if ( type === "fx" && queue[0] !== "inprogress" ) {
@@ -4006,21 +7614,22 @@ var rcheckableType = (/^(?:checkbox|radio)$/i);
 		div = fragment.appendChild( document.createElement( "div" ) ),
 		input = document.createElement( "input" );
 
-	// #11217 - WebKit loses check when the name is after the checked attribute
+	// Support: Safari<=5.1
+	// Check state lost if the name is set (#11217)
 	// Support: Windows Web Apps (WWA)
-	// `name` and `type` need .setAttribute for WWA
+	// `name` and `type` must use .setAttribute for WWA (#14901)
 	input.setAttribute( "type", "radio" );
 	input.setAttribute( "checked", "checked" );
 	input.setAttribute( "name", "t" );
 
 	div.appendChild( input );
 
-	// Support: Safari 5.1, iOS 5.1, Android 4.x, Android 2.3
-	// old WebKit doesn't clone checked state correctly in fragments
+	// Support: Safari<=5.1, Android<4.2
+	// Older WebKit doesn't clone checked state correctly in fragments
 	support.checkClone = div.cloneNode( true ).cloneNode( true ).lastChild.checked;
 
+	// Support: IE<=11+
 	// Make sure textarea (and checkbox) defaultValue is properly cloned
-	// Support: IE9-IE11+
 	div.innerHTML = "<textarea>x</textarea>";
 	support.noCloneChecked = !!div.cloneNode( true ).lastChild.defaultValue;
 })();
@@ -4398,8 +8007,8 @@ jQuery.event = {
 			j = 0;
 			while ( (handleObj = matched.handlers[ j++ ]) && !event.isImmediatePropagationStopped() ) {
 
-				// Triggered event must either 1) have no namespace, or
-				// 2) have namespace(s) a subset or equal to those in the bound event (both can have no namespace).
+				// Triggered event must either 1) have no namespace, or 2) have namespace(s)
+				// a subset or equal to those in the bound event (both can have no namespace).
 				if ( !event.namespace_re || event.namespace_re.test( handleObj.namespace ) ) {
 
 					event.handleObj = handleObj;
@@ -4549,7 +8158,7 @@ jQuery.event = {
 			event.target = document;
 		}
 
-		// Support: Safari 6.0+, Chrome < 28
+		// Support: Safari 6.0+, Chrome<28
 		// Target should not be a text node (#504, #13143)
 		if ( event.target.nodeType === 3 ) {
 			event.target = event.target.parentNode;
@@ -4654,7 +8263,7 @@ jQuery.Event = function( src, props ) {
 		// by a handler lower down the tree; reflect the correct value.
 		this.isDefaultPrevented = src.defaultPrevented ||
 				src.defaultPrevented === undefined &&
-				// Support: Android < 4.0
+				// Support: Android<4.0
 				src.returnValue === false ?
 			returnTrue :
 			returnFalse;
@@ -4744,8 +8353,8 @@ jQuery.each({
 	};
 });
 
-// Create "bubbling" focus and blur events
 // Support: Firefox, Chrome, Safari
+// Create "bubbling" focus and blur events
 if ( !support.focusinBubbles ) {
 	jQuery.each({ focus: "focusin", blur: "focusout" }, function( orig, fix ) {
 
@@ -4898,7 +8507,7 @@ var
 	// We have to close these tags to support XHTML (#13200)
 	wrapMap = {
 
-		// Support: IE 9
+		// Support: IE9
 		option: [ 1, "<select multiple='multiple'>", "</select>" ],
 
 		thead: [ 1, "<table>", "</table>" ],
@@ -4909,7 +8518,7 @@ var
 		_default: [ 0, "", "" ]
 	};
 
-// Support: IE 9
+// Support: IE9
 wrapMap.optgroup = wrapMap.option;
 
 wrapMap.tbody = wrapMap.tfoot = wrapMap.colgroup = wrapMap.caption = wrapMap.thead;
@@ -4999,7 +8608,7 @@ function getAll( context, tag ) {
 		ret;
 }
 
-// Support: IE >= 9
+// Fix IE bugs, see support tests
 function fixInput( src, dest ) {
 	var nodeName = dest.nodeName.toLowerCase();
 
@@ -5019,8 +8628,7 @@ jQuery.extend({
 			clone = elem.cloneNode( true ),
 			inPage = jQuery.contains( elem.ownerDocument, elem );
 
-		// Support: IE >= 9
-		// Fix Cloning issues
+		// Fix IE cloning issues
 		if ( !support.noCloneChecked && ( elem.nodeType === 1 || elem.nodeType === 11 ) &&
 				!jQuery.isXMLDoc( elem ) ) {
 
@@ -5071,8 +8679,8 @@ jQuery.extend({
 
 				// Add nodes directly
 				if ( jQuery.type( elem ) === "object" ) {
-					// Support: QtWebKit
-					// jQuery.merge because push.apply(_, arraylike) throws
+					// Support: QtWebKit, PhantomJS
+					// push.apply(_, arraylike) throws on ancient WebKit
 					jQuery.merge( nodes, elem.nodeType ? [ elem ] : elem );
 
 				// Convert non-html into a text node
@@ -5094,15 +8702,14 @@ jQuery.extend({
 						tmp = tmp.lastChild;
 					}
 
-					// Support: QtWebKit
-					// jQuery.merge because push.apply(_, arraylike) throws
+					// Support: QtWebKit, PhantomJS
+					// push.apply(_, arraylike) throws on ancient WebKit
 					jQuery.merge( nodes, tmp.childNodes );
 
 					// Remember the top-level container
 					tmp = fragment.firstChild;
 
-					// Fixes #12346
-					// Support: Webkit, IE
+					// Ensure the created nodes are orphaned (#12392)
 					tmp.textContent = "";
 				}
 			}
@@ -5464,7 +9071,7 @@ function actualDisplay( name, doc ) {
 		// getDefaultComputedStyle might be reliably used only on attached element
 		display = window.getDefaultComputedStyle && ( style = window.getDefaultComputedStyle( elem[ 0 ] ) ) ?
 
-			// Use of this method is a temporary fix (more like optmization) until something better comes along,
+			// Use of this method is a temporary fix (more like optimization) until something better comes along,
 			// since it was removed from specification and supported only in FF
 			style.display : jQuery.css( elem[ 0 ], "display" );
 
@@ -5514,7 +9121,14 @@ var rmargin = (/^margin/);
 var rnumnonpx = new RegExp( "^(" + pnum + ")(?!px)[a-z%]+$", "i" );
 
 var getStyles = function( elem ) {
-		return elem.ownerDocument.defaultView.getComputedStyle( elem, null );
+		// Support: IE<=11+, Firefox<=30+ (#15098, #14150)
+		// IE throws on elements created in popups
+		// FF meanwhile throws on frame elements through "defaultView.getComputedStyle"
+		if ( elem.ownerDocument.defaultView.opener ) {
+			return elem.ownerDocument.defaultView.getComputedStyle( elem, null );
+		}
+
+		return window.getComputedStyle( elem, null );
 	};
 
 
@@ -5526,7 +9140,7 @@ function curCSS( elem, name, computed ) {
 	computed = computed || getStyles( elem );
 
 	// Support: IE9
-	// getPropertyValue is only needed for .css('filter') in IE9, see #12537
+	// getPropertyValue is only needed for .css('filter') (#12537)
 	if ( computed ) {
 		ret = computed.getPropertyValue( name ) || computed[ name ];
 	}
@@ -5572,15 +9186,13 @@ function addGetHookIf( conditionFn, hookFn ) {
 	return {
 		get: function() {
 			if ( conditionFn() ) {
-				// Hook not needed (or it's not possible to use it due to missing dependency),
-				// remove it.
-				// Since there are no other hooks for marginRight, remove the whole object.
+				// Hook not needed (or it's not possible to use it due
+				// to missing dependency), remove it.
 				delete this.get;
 				return;
 			}
 
 			// Hook needed; redefine it so that the support test is not executed again.
-
 			return (this.get = hookFn).apply( this, arguments );
 		}
 	};
@@ -5597,6 +9209,8 @@ function addGetHookIf( conditionFn, hookFn ) {
 		return;
 	}
 
+	// Support: IE9-11+
+	// Style of cloned element affects source element cloned (#8908)
 	div.style.backgroundClip = "content-box";
 	div.cloneNode( true ).style.backgroundClip = "";
 	support.clearCloneStyle = div.style.backgroundClip === "content-box";
@@ -5629,6 +9243,7 @@ function addGetHookIf( conditionFn, hookFn ) {
 	if ( window.getComputedStyle ) {
 		jQuery.extend( support, {
 			pixelPosition: function() {
+
 				// This test is executed only once but we still do memoizing
 				// since we can use the boxSizingReliable pre-computing.
 				// No need to check if the test was already performed, though.
@@ -5642,6 +9257,7 @@ function addGetHookIf( conditionFn, hookFn ) {
 				return boxSizingReliableVal;
 			},
 			reliableMarginRight: function() {
+
 				// Support: Android 2.3
 				// Check if div with explicit width and no margin-right incorrectly
 				// gets computed margin-right based on width of container. (#3333)
@@ -5663,6 +9279,7 @@ function addGetHookIf( conditionFn, hookFn ) {
 				ret = !parseFloat( window.getComputedStyle( marginDiv, null ).marginRight );
 
 				docElem.removeChild( container );
+				div.removeChild( marginDiv );
 
 				return ret;
 			}
@@ -5694,8 +9311,8 @@ jQuery.swap = function( elem, options, callback, args ) {
 
 
 var
-	// swappable if display is none or starts with table except "table", "table-cell", or "table-caption"
-	// see here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
+	// Swappable if display is none or starts with table except "table", "table-cell", or "table-caption"
+	// See here for display values: https://developer.mozilla.org/en-US/docs/CSS/display
 	rdisplayswap = /^(none|table(?!-c[ea]).+)/,
 	rnumsplit = new RegExp( "^(" + pnum + ")(.*)$", "i" ),
 	rrelNum = new RegExp( "^([+-])=(" + pnum + ")", "i" ),
@@ -5708,15 +9325,15 @@ var
 
 	cssPrefixes = [ "Webkit", "O", "Moz", "ms" ];
 
-// return a css property mapped to a potentially vendor prefixed property
+// Return a css property mapped to a potentially vendor prefixed property
 function vendorPropName( style, name ) {
 
-	// shortcut for names that are not vendor prefixed
+	// Shortcut for names that are not vendor prefixed
 	if ( name in style ) {
 		return name;
 	}
 
-	// check for vendor prefixed names
+	// Check for vendor prefixed names
 	var capName = name[0].toUpperCase() + name.slice(1),
 		origName = name,
 		i = cssPrefixes.length;
@@ -5749,7 +9366,7 @@ function augmentWidthOrHeight( elem, name, extra, isBorderBox, styles ) {
 		val = 0;
 
 	for ( ; i < 4; i += 2 ) {
-		// both box models exclude margin, so add it if we want it
+		// Both box models exclude margin, so add it if we want it
 		if ( extra === "margin" ) {
 			val += jQuery.css( elem, extra + cssExpand[ i ], true, styles );
 		}
@@ -5760,15 +9377,15 @@ function augmentWidthOrHeight( elem, name, extra, isBorderBox, styles ) {
 				val -= jQuery.css( elem, "padding" + cssExpand[ i ], true, styles );
 			}
 
-			// at this point, extra isn't border nor margin, so remove border
+			// At this point, extra isn't border nor margin, so remove border
 			if ( extra !== "margin" ) {
 				val -= jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
 			}
 		} else {
-			// at this point, extra isn't content, so add padding
+			// At this point, extra isn't content, so add padding
 			val += jQuery.css( elem, "padding" + cssExpand[ i ], true, styles );
 
-			// at this point, extra isn't content nor padding, so add border
+			// At this point, extra isn't content nor padding, so add border
 			if ( extra !== "padding" ) {
 				val += jQuery.css( elem, "border" + cssExpand[ i ] + "Width", true, styles );
 			}
@@ -5786,7 +9403,7 @@ function getWidthOrHeight( elem, name, extra ) {
 		styles = getStyles( elem ),
 		isBorderBox = jQuery.css( elem, "boxSizing", false, styles ) === "border-box";
 
-	// some non-html elements return undefined for offsetWidth, so check for null/undefined
+	// Some non-html elements return undefined for offsetWidth, so check for null/undefined
 	// svg - https://bugzilla.mozilla.org/show_bug.cgi?id=649285
 	// MathML - https://bugzilla.mozilla.org/show_bug.cgi?id=491668
 	if ( val <= 0 || val == null ) {
@@ -5801,7 +9418,7 @@ function getWidthOrHeight( elem, name, extra ) {
 			return val;
 		}
 
-		// we need the check for style in case a browser which returns unreliable values
+		// Check for style in case a browser which returns unreliable values
 		// for getComputedStyle silently falls back to the reliable elem.style
 		valueIsBorderBox = isBorderBox &&
 			( support.boxSizingReliable() || val === elem.style[ name ] );
@@ -5810,7 +9427,7 @@ function getWidthOrHeight( elem, name, extra ) {
 		val = parseFloat( val ) || 0;
 	}
 
-	// use the active box-sizing model to add/subtract irrelevant styles
+	// Use the active box-sizing model to add/subtract irrelevant styles
 	return ( val +
 		augmentWidthOrHeight(
 			elem,
@@ -5874,12 +9491,14 @@ function showHide( elements, show ) {
 }
 
 jQuery.extend({
+
 	// Add in style property hooks for overriding the default
 	// behavior of getting and setting a style property
 	cssHooks: {
 		opacity: {
 			get: function( elem, computed ) {
 				if ( computed ) {
+
 					// We should always get a number back from opacity
 					var ret = curCSS( elem, "opacity" );
 					return ret === "" ? "1" : ret;
@@ -5907,12 +9526,12 @@ jQuery.extend({
 	// Add in properties whose names you wish to fix before
 	// setting or getting the value
 	cssProps: {
-		// normalize float css property
 		"float": "cssFloat"
 	},
 
 	// Get and set the style property on a DOM Node
 	style: function( elem, name, value, extra ) {
+
 		// Don't set styles on text and comment nodes
 		if ( !elem || elem.nodeType === 3 || elem.nodeType === 8 || !elem.style ) {
 			return;
@@ -5925,33 +9544,32 @@ jQuery.extend({
 
 		name = jQuery.cssProps[ origName ] || ( jQuery.cssProps[ origName ] = vendorPropName( style, origName ) );
 
-		// gets hook for the prefixed version
-		// followed by the unprefixed version
+		// Gets hook for the prefixed version, then unprefixed version
 		hooks = jQuery.cssHooks[ name ] || jQuery.cssHooks[ origName ];
 
 		// Check if we're setting a value
 		if ( value !== undefined ) {
 			type = typeof value;
 
-			// convert relative number strings (+= or -=) to relative numbers. #7345
+			// Convert "+=" or "-=" to relative numbers (#7345)
 			if ( type === "string" && (ret = rrelNum.exec( value )) ) {
 				value = ( ret[1] + 1 ) * ret[2] + parseFloat( jQuery.css( elem, name ) );
 				// Fixes bug #9237
 				type = "number";
 			}
 
-			// Make sure that null and NaN values aren't set. See: #7116
+			// Make sure that null and NaN values aren't set (#7116)
 			if ( value == null || value !== value ) {
 				return;
 			}
 
-			// If a number was passed in, add 'px' to the (except for certain CSS properties)
+			// If a number, add 'px' to the (except for certain CSS properties)
 			if ( type === "number" && !jQuery.cssNumber[ origName ] ) {
 				value += "px";
 			}
 
-			// Fixes #8908, it can be done more correctly by specifying setters in cssHooks,
-			// but it would mean to define eight (for every problematic property) identical functions
+			// Support: IE9-11+
+			// background-* props affect original clone's values
 			if ( !support.clearCloneStyle && value === "" && name.indexOf( "background" ) === 0 ) {
 				style[ name ] = "inherit";
 			}
@@ -5979,8 +9597,7 @@ jQuery.extend({
 		// Make sure that we're working with the right name
 		name = jQuery.cssProps[ origName ] || ( jQuery.cssProps[ origName ] = vendorPropName( elem.style, origName ) );
 
-		// gets hook for the prefixed version
-		// followed by the unprefixed version
+		// Try prefixed name followed by the unprefixed name
 		hooks = jQuery.cssHooks[ name ] || jQuery.cssHooks[ origName ];
 
 		// If a hook was provided get the computed value from there
@@ -5993,12 +9610,12 @@ jQuery.extend({
 			val = curCSS( elem, name, styles );
 		}
 
-		//convert "normal" to computed value
+		// Convert "normal" to computed value
 		if ( val === "normal" && name in cssNormalTransform ) {
 			val = cssNormalTransform[ name ];
 		}
 
-		// Return, converting to number if forced or a qualifier was provided and val looks numeric
+		// Make numeric if forced or a qualifier was provided and val looks numeric
 		if ( extra === "" || extra ) {
 			num = parseFloat( val );
 			return extra === true || jQuery.isNumeric( num ) ? num || 0 : val;
@@ -6011,8 +9628,9 @@ jQuery.each([ "height", "width" ], function( i, name ) {
 	jQuery.cssHooks[ name ] = {
 		get: function( elem, computed, extra ) {
 			if ( computed ) {
-				// certain elements can have dimension info if we invisibly show them
-				// however, it must have a current display style that would benefit from this
+
+				// Certain elements can have dimension info if we invisibly show them
+				// but it must have a current display style that would benefit
 				return rdisplayswap.test( jQuery.css( elem, "display" ) ) && elem.offsetWidth === 0 ?
 					jQuery.swap( elem, cssShow, function() {
 						return getWidthOrHeight( elem, name, extra );
@@ -6040,8 +9658,6 @@ jQuery.each([ "height", "width" ], function( i, name ) {
 jQuery.cssHooks.marginRight = addGetHookIf( support.reliableMarginRight,
 	function( elem, computed ) {
 		if ( computed ) {
-			// WebKit Bug 13343 - getComputedStyle returns wrong value for margin-right
-			// Work around by temporarily setting element display to inline-block
 			return jQuery.swap( elem, { "display": "inline-block" },
 				curCSS, [ elem, "marginRight" ] );
 		}
@@ -6059,7 +9675,7 @@ jQuery.each({
 			var i = 0,
 				expanded = {},
 
-				// assumes a single number if not a string
+				// Assumes a single number if not a string
 				parts = typeof value === "string" ? value.split(" ") : [ value ];
 
 			for ( ; i < 4; i++ ) {
@@ -6182,17 +9798,18 @@ Tween.propHooks = {
 				return tween.elem[ tween.prop ];
 			}
 
-			// passing an empty string as a 3rd parameter to .css will automatically
-			// attempt a parseFloat and fallback to a string if the parse fails
-			// so, simple values such as "10px" are parsed to Float.
-			// complex values such as "rotate(1rad)" are returned as is.
+			// Passing an empty string as a 3rd parameter to .css will automatically
+			// attempt a parseFloat and fallback to a string if the parse fails.
+			// Simple values such as "10px" are parsed to Float;
+			// complex values such as "rotate(1rad)" are returned as-is.
 			result = jQuery.css( tween.elem, tween.prop, "" );
 			// Empty strings, null, undefined and "auto" are converted to 0.
 			return !result || result === "auto" ? 0 : result;
 		},
 		set: function( tween ) {
-			// use step hook for back compat - use cssHook if its there - use .style if its
-			// available and use plain properties where available
+			// Use step hook for back compat.
+			// Use cssHook if its there.
+			// Use .style if available and use plain properties where available.
 			if ( jQuery.fx.step[ tween.prop ] ) {
 				jQuery.fx.step[ tween.prop ]( tween );
 			} else if ( tween.elem.style && ( tween.elem.style[ jQuery.cssProps[ tween.prop ] ] != null || jQuery.cssHooks[ tween.prop ] ) ) {
@@ -6206,7 +9823,6 @@ Tween.propHooks = {
 
 // Support: IE9
 // Panic based approach to setting things on disconnected nodes
-
 Tween.propHooks.scrollTop = Tween.propHooks.scrollLeft = {
 	set: function( tween ) {
 		if ( tween.elem.nodeType && tween.elem.parentNode ) {
@@ -6262,16 +9878,16 @@ var
 				start = +target || 1;
 
 				do {
-					// If previous iteration zeroed out, double until we get *something*
-					// Use a string for doubling factor so we don't accidentally see scale as unchanged below
+					// If previous iteration zeroed out, double until we get *something*.
+					// Use string for doubling so we don't accidentally see scale as unchanged below
 					scale = scale || ".5";
 
 					// Adjust and apply
 					start = start / scale;
 					jQuery.style( tween.elem, prop, start + unit );
 
-				// Update scale, tolerating zero or NaN from tween.cur()
-				// And breaking the loop if scale is unchanged or perfect, or if we've just had enough
+				// Update scale, tolerating zero or NaN from tween.cur(),
+				// break the loop if scale is unchanged or perfect, or if we've just had enough
 				} while ( scale !== (scale = tween.cur() / target) && scale !== 1 && --maxIterations );
 			}
 
@@ -6303,8 +9919,8 @@ function genFx( type, includeWidth ) {
 		i = 0,
 		attrs = { height: type };
 
-	// if we include width, step value is 1 to do all cssExpand values,
-	// if we don't include width, step value is 2 to skip over Left and Right
+	// If we include width, step value is 1 to do all cssExpand values,
+	// otherwise step value is 2 to skip over Left and Right
 	includeWidth = includeWidth ? 1 : 0;
 	for ( ; i < 4 ; i += 2 - includeWidth ) {
 		which = cssExpand[ i ];
@@ -6326,7 +9942,7 @@ function createTween( value, prop, animation ) {
 	for ( ; index < length; index++ ) {
 		if ( (tween = collection[ index ].call( animation, prop, value )) ) {
 
-			// we're done with this property
+			// We're done with this property
 			return tween;
 		}
 	}
@@ -6341,7 +9957,7 @@ function defaultPrefilter( elem, props, opts ) {
 		hidden = elem.nodeType && isHidden( elem ),
 		dataShow = data_priv.get( elem, "fxshow" );
 
-	// handle queue: false promises
+	// Handle queue: false promises
 	if ( !opts.queue ) {
 		hooks = jQuery._queueHooks( elem, "fx" );
 		if ( hooks.unqueued == null ) {
@@ -6356,8 +9972,7 @@ function defaultPrefilter( elem, props, opts ) {
 		hooks.unqueued++;
 
 		anim.always(function() {
-			// doing this makes sure that the complete handler will be called
-			// before this completes
+			// Ensure the complete handler is called before this completes
 			anim.always(function() {
 				hooks.unqueued--;
 				if ( !jQuery.queue( elem, "fx" ).length ) {
@@ -6367,7 +9982,7 @@ function defaultPrefilter( elem, props, opts ) {
 		});
 	}
 
-	// height/width overflow pass
+	// Height/width overflow pass
 	if ( elem.nodeType === 1 && ( "height" in props || "width" in props ) ) {
 		// Make sure that nothing sneaks out
 		// Record all 3 overflow attributes because IE9-10 do not
@@ -6429,7 +10044,7 @@ function defaultPrefilter( elem, props, opts ) {
 			dataShow = data_priv.access( elem, "fxshow", {} );
 		}
 
-		// store state if its toggle - enables .stop().toggle() to "reverse"
+		// Store state if its toggle - enables .stop().toggle() to "reverse"
 		if ( toggle ) {
 			dataShow.hidden = !hidden;
 		}
@@ -6489,8 +10104,8 @@ function propFilter( props, specialEasing ) {
 			value = hooks.expand( value );
 			delete props[ name ];
 
-			// not quite $.extend, this wont overwrite keys already present.
-			// also - reusing 'index' from above because we have the correct "name"
+			// Not quite $.extend, this won't overwrite existing keys.
+			// Reusing 'index' because we have the correct "name"
 			for ( index in value ) {
 				if ( !( index in props ) ) {
 					props[ index ] = value[ index ];
@@ -6509,7 +10124,7 @@ function Animation( elem, properties, options ) {
 		index = 0,
 		length = animationPrefilters.length,
 		deferred = jQuery.Deferred().always( function() {
-			// don't match elem in the :animated selector
+			// Don't match elem in the :animated selector
 			delete tick.elem;
 		}),
 		tick = function() {
@@ -6518,7 +10133,8 @@ function Animation( elem, properties, options ) {
 			}
 			var currentTime = fxNow || createFxNow(),
 				remaining = Math.max( 0, animation.startTime + animation.duration - currentTime ),
-				// archaic crash bug won't allow us to use 1 - ( 0.5 || 0 ) (#12497)
+				// Support: Android 2.3
+				// Archaic crash bug won't allow us to use `1 - ( 0.5 || 0 )` (#12497)
 				temp = remaining / animation.duration || 0,
 				percent = 1 - temp,
 				index = 0,
@@ -6554,7 +10170,7 @@ function Animation( elem, properties, options ) {
 			},
 			stop: function( gotoEnd ) {
 				var index = 0,
-					// if we are going to the end, we want to run all the tweens
+					// If we are going to the end, we want to run all the tweens
 					// otherwise we skip this part
 					length = gotoEnd ? animation.tweens.length : 0;
 				if ( stopped ) {
@@ -6565,8 +10181,7 @@ function Animation( elem, properties, options ) {
 					animation.tweens[ index ].run( 1 );
 				}
 
-				// resolve when we played the last frame
-				// otherwise, reject
+				// Resolve when we played the last frame; otherwise, reject
 				if ( gotoEnd ) {
 					deferred.resolveWith( elem, [ animation, gotoEnd ] );
 				} else {
@@ -6648,7 +10263,7 @@ jQuery.speed = function( speed, easing, fn ) {
 	opt.duration = jQuery.fx.off ? 0 : typeof opt.duration === "number" ? opt.duration :
 		opt.duration in jQuery.fx.speeds ? jQuery.fx.speeds[ opt.duration ] : jQuery.fx.speeds._default;
 
-	// normalize opt.queue - true/undefined/null -> "fx"
+	// Normalize opt.queue - true/undefined/null -> "fx"
 	if ( opt.queue == null || opt.queue === true ) {
 		opt.queue = "fx";
 	}
@@ -6672,10 +10287,10 @@ jQuery.speed = function( speed, easing, fn ) {
 jQuery.fn.extend({
 	fadeTo: function( speed, to, easing, callback ) {
 
-		// show any hidden elements after setting opacity to 0
+		// Show any hidden elements after setting opacity to 0
 		return this.filter( isHidden ).css( "opacity", 0 ).show()
 
-			// animate to the value specified
+			// Animate to the value specified
 			.end().animate({ opacity: to }, speed, easing, callback );
 	},
 	animate: function( prop, speed, easing, callback ) {
@@ -6738,9 +10353,9 @@ jQuery.fn.extend({
 				}
 			}
 
-			// start the next in the queue if the last step wasn't forced
-			// timers currently will call their complete callbacks, which will dequeue
-			// but only if they were gotoEnd
+			// Start the next in the queue if the last step wasn't forced.
+			// Timers currently will call their complete callbacks, which
+			// will dequeue but only if they were gotoEnd.
 			if ( dequeue || !gotoEnd ) {
 				jQuery.dequeue( this, type );
 			}
@@ -6758,17 +10373,17 @@ jQuery.fn.extend({
 				timers = jQuery.timers,
 				length = queue ? queue.length : 0;
 
-			// enable finishing flag on private data
+			// Enable finishing flag on private data
 			data.finish = true;
 
-			// empty the queue first
+			// Empty the queue first
 			jQuery.queue( this, type, [] );
 
 			if ( hooks && hooks.stop ) {
 				hooks.stop.call( this, true );
 			}
 
-			// look for any active animations, and finish them
+			// Look for any active animations, and finish them
 			for ( index = timers.length; index--; ) {
 				if ( timers[ index ].elem === this && timers[ index ].queue === type ) {
 					timers[ index ].anim.stop( true );
@@ -6776,14 +10391,14 @@ jQuery.fn.extend({
 				}
 			}
 
-			// look for any animations in the old queue and finish them
+			// Look for any animations in the old queue and finish them
 			for ( index = 0; index < length; index++ ) {
 				if ( queue[ index ] && queue[ index ].finish ) {
 					queue[ index ].finish.call( this );
 				}
 			}
 
-			// turn off finishing flag
+			// Turn off finishing flag
 			delete data.finish;
 		});
 	}
@@ -6886,21 +10501,21 @@ jQuery.fn.delay = function( time, type ) {
 
 	input.type = "checkbox";
 
-	// Support: iOS 5.1, Android 4.x, Android 2.3
-	// Check the default checkbox/radio value ("" on old WebKit; "on" elsewhere)
+	// Support: iOS<=5.1, Android<=4.2+
+	// Default value for a checkbox should be "on"
 	support.checkOn = input.value !== "";
 
-	// Must access the parent to make an option select properly
-	// Support: IE9, IE10
+	// Support: IE<=11+
+	// Must access selectedIndex to make default options select
 	support.optSelected = opt.selected;
 
-	// Make sure that the options inside disabled selects aren't marked as disabled
-	// (WebKit marks them as disabled)
+	// Support: Android<=2.3
+	// Options inside disabled selects are incorrectly marked as disabled
 	select.disabled = true;
 	support.optDisabled = !opt.disabled;
 
-	// Check if an input maintains its value after becoming a radio
-	// Support: IE9, IE10
+	// Support: IE<=11+
+	// An input loses its value after becoming a radio
 	input = document.createElement( "input" );
 	input.value = "t";
 	input.type = "radio";
@@ -6997,8 +10612,6 @@ jQuery.extend({
 			set: function( elem, value ) {
 				if ( !support.radioValue && value === "radio" &&
 					jQuery.nodeName( elem, "input" ) ) {
-					// Setting the type on a radio button after the value resets the value in IE6-9
-					// Reset value to default in case type is set after value during creation
 					var val = elem.value;
 					elem.setAttribute( "type", value );
 					if ( val ) {
@@ -7068,7 +10681,7 @@ jQuery.extend({
 		var ret, hooks, notxml,
 			nType = elem.nodeType;
 
-		// don't get/set properties on text, comment and attribute nodes
+		// Don't get/set properties on text, comment and attribute nodes
 		if ( !elem || nType === 3 || nType === 8 || nType === 2 ) {
 			return;
 		}
@@ -7104,8 +10717,6 @@ jQuery.extend({
 	}
 });
 
-// Support: IE9+
-// Selectedness for an option in an optgroup can be inaccurate
 if ( !support.optSelected ) {
 	jQuery.propHooks.selected = {
 		get: function( elem ) {
@@ -7213,7 +10824,7 @@ jQuery.fn.extend({
 						}
 					}
 
-					// only assign if different to avoid unneeded rendering.
+					// Only assign if different to avoid unneeded rendering.
 					finalValue = value ? jQuery.trim( cur ) : "";
 					if ( elem.className !== finalValue ) {
 						elem.className = finalValue;
@@ -7240,14 +10851,14 @@ jQuery.fn.extend({
 
 		return this.each(function() {
 			if ( type === "string" ) {
-				// toggle individual class names
+				// Toggle individual class names
 				var className,
 					i = 0,
 					self = jQuery( this ),
 					classNames = value.match( rnotwhite ) || [];
 
 				while ( (className = classNames[ i++ ]) ) {
-					// check each className given, space separated list
+					// Check each className given, space separated list
 					if ( self.hasClass( className ) ) {
 						self.removeClass( className );
 					} else {
@@ -7262,7 +10873,7 @@ jQuery.fn.extend({
 					data_priv.set( this, "__className__", this.className );
 				}
 
-				// If the element has a class name or if we're passed "false",
+				// If the element has a class name or if we're passed `false`,
 				// then remove the whole classname (if there was one, the above saved it).
 				// Otherwise bring back whatever was previously saved (if anything),
 				// falling back to the empty string if nothing was stored.
@@ -7306,9 +10917,9 @@ jQuery.fn.extend({
 				ret = elem.value;
 
 				return typeof ret === "string" ?
-					// handle most common string cases
+					// Handle most common string cases
 					ret.replace(rreturn, "") :
-					// handle cases where value is null/undef or number
+					// Handle cases where value is null/undef or number
 					ret == null ? "" : ret;
 			}
 
@@ -7416,7 +11027,7 @@ jQuery.extend({
 					}
 				}
 
-				// force browsers to behave consistently when non-matching value is set
+				// Force browsers to behave consistently when non-matching value is set
 				if ( !optionSet ) {
 					elem.selectedIndex = -1;
 				}
@@ -7437,8 +11048,6 @@ jQuery.each([ "radio", "checkbox" ], function() {
 	};
 	if ( !support.checkOn ) {
 		jQuery.valHooks[ this ].get = function( elem ) {
-			// Support: Webkit
-			// "" is returned instead of "on" if a value isn't specified
 			return elem.getAttribute("value") === null ? "on" : elem.value;
 		};
 	}
@@ -7520,10 +11129,6 @@ jQuery.parseXML = function( data ) {
 
 
 var
-	// Document location
-	ajaxLocParts,
-	ajaxLocation,
-
 	rhash = /#.*$/,
 	rts = /([?&])_=[^&]*/,
 	rheaders = /^(.*?):[ \t]*([^\r\n]*)$/mg,
@@ -7552,22 +11157,13 @@ var
 	transports = {},
 
 	// Avoid comment-prolog char sequence (#10098); must appease lint and evade compression
-	allTypes = "*/".concat("*");
+	allTypes = "*/".concat( "*" ),
 
-// #8138, IE may throw an exception when accessing
-// a field from window.location if document.domain has been set
-try {
-	ajaxLocation = location.href;
-} catch( e ) {
-	// Use the href attribute of an A element
-	// since IE will modify it given document.location
-	ajaxLocation = document.createElement( "a" );
-	ajaxLocation.href = "";
-	ajaxLocation = ajaxLocation.href;
-}
+	// Document location
+	ajaxLocation = window.location.href,
 
-// Segment location into parts
-ajaxLocParts = rurl.exec( ajaxLocation.toLowerCase() ) || [];
+	// Segment location into parts
+	ajaxLocParts = rurl.exec( ajaxLocation.toLowerCase() ) || [];
 
 // Base "constructor" for jQuery.ajaxPrefilter and jQuery.ajaxTransport
 function addToPrefiltersOrTransports( structure ) {
@@ -8046,7 +11642,8 @@ jQuery.extend({
 		}
 
 		// We can fire global events as of now if asked to
-		fireGlobals = s.global;
+		// Don't fire events if jQuery.event is undefined in an AMD-usage scenario (#15118)
+		fireGlobals = jQuery.event && s.global;
 
 		// Watch for a new set of requests
 		if ( fireGlobals && jQuery.active++ === 0 ) {
@@ -8119,7 +11716,7 @@ jQuery.extend({
 			return jqXHR.abort();
 		}
 
-		// aborting is no longer a cancellation
+		// Aborting is no longer a cancellation
 		strAbort = "abort";
 
 		// Install callbacks on deferreds
@@ -8231,8 +11828,7 @@ jQuery.extend({
 					isSuccess = !error;
 				}
 			} else {
-				// We extract error from statusText
-				// then normalize statusText and status for non-aborts
+				// Extract error from statusText and normalize for non-aborts
 				error = statusText;
 				if ( status || !statusText ) {
 					statusText = "error";
@@ -8288,7 +11884,7 @@ jQuery.extend({
 
 jQuery.each( [ "get", "post" ], function( i, method ) {
 	jQuery[ method ] = function( url, data, callback, type ) {
-		// shift arguments if data argument was omitted
+		// Shift arguments if data argument was omitted
 		if ( jQuery.isFunction( data ) ) {
 			type = type || callback;
 			callback = data;
@@ -8302,13 +11898,6 @@ jQuery.each( [ "get", "post" ], function( i, method ) {
 			data: data,
 			success: callback
 		});
-	};
-});
-
-// Attach a bunch of functions for handling common AJAX events
-jQuery.each( [ "ajaxStart", "ajaxStop", "ajaxComplete", "ajaxError", "ajaxSuccess", "ajaxSend" ], function( i, type ) {
-	jQuery.fn[ type ] = function( fn ) {
-		return this.on( type, fn );
 	};
 });
 
@@ -8529,8 +12118,9 @@ var xhrId = 0,
 
 // Support: IE9
 // Open requests must be manually aborted on unload (#5280)
-if ( window.ActiveXObject ) {
-	jQuery( window ).on( "unload", function() {
+// See https://support.microsoft.com/kb/2856746 for more info
+if ( window.attachEvent ) {
+	window.attachEvent( "onunload", function() {
 		for ( var key in xhrCallbacks ) {
 			xhrCallbacks[ key ]();
 		}
@@ -8883,6 +12473,16 @@ jQuery.fn.load = function( url, params, callback ) {
 
 
 
+// Attach a bunch of functions for handling common AJAX events
+jQuery.each( [ "ajaxStart", "ajaxStop", "ajaxComplete", "ajaxError", "ajaxSuccess", "ajaxSend" ], function( i, type ) {
+	jQuery.fn[ type ] = function( fn ) {
+		return this.on( type, fn );
+	};
+});
+
+
+
+
 jQuery.expr.filters.animated = function( elem ) {
 	return jQuery.grep(jQuery.timers, function( fn ) {
 		return elem === fn.elem;
@@ -8919,7 +12519,8 @@ jQuery.offset = {
 		calculatePosition = ( position === "absolute" || position === "fixed" ) &&
 			( curCSSTop + curCSSLeft ).indexOf("auto") > -1;
 
-		// Need to be able to calculate position if either top or left is auto and position is either absolute or fixed
+		// Need to be able to calculate position if either
+		// top or left is auto and position is either absolute or fixed
 		if ( calculatePosition ) {
 			curPosition = curElem.position();
 			curTop = curPosition.top;
@@ -8976,8 +12577,8 @@ jQuery.fn.extend({
 			return box;
 		}
 
+		// Support: BlackBerry 5, iOS 3 (original iPhone)
 		// If we don't have gBCR, just use 0,0 rather than error
-		// BlackBerry 5, iOS 3 (original iPhone)
 		if ( typeof elem.getBoundingClientRect !== strundefined ) {
 			box = elem.getBoundingClientRect();
 		}
@@ -8999,7 +12600,7 @@ jQuery.fn.extend({
 
 		// Fixed elements are offset from window (parentOffset = {top:0, left: 0}, because it is its only offset parent
 		if ( jQuery.css( elem, "position" ) === "fixed" ) {
-			// We assume that getBoundingClientRect is available when computed position is fixed
+			// Assume getBoundingClientRect is there when computed position is fixed
 			offset = elem.getBoundingClientRect();
 
 		} else {
@@ -9062,16 +12663,18 @@ jQuery.each( { scrollLeft: "pageXOffset", scrollTop: "pageYOffset" }, function( 
 	};
 });
 
+// Support: Safari<7+, Chrome<37+
 // Add the top/left cssHooks using jQuery.fn.position
 // Webkit bug: https://bugs.webkit.org/show_bug.cgi?id=29084
-// getComputedStyle returns percent when specified for top/left/bottom/right
-// rather than make the css module depend on the offset module, we just check for it here
+// Blink bug: https://code.google.com/p/chromium/issues/detail?id=229280
+// getComputedStyle returns percent when specified for top/left/bottom/right;
+// rather than make the css module depend on the offset module, just check for it here
 jQuery.each( [ "top", "left" ], function( i, prop ) {
 	jQuery.cssHooks[ prop ] = addGetHookIf( support.pixelPosition,
 		function( elem, computed ) {
 			if ( computed ) {
 				computed = curCSS( elem, prop );
-				// if curCSS returns percentage, fallback to offset
+				// If curCSS returns percentage, fallback to offset
 				return rnumnonpx.test( computed ) ?
 					jQuery( elem ).position()[ prop ] + "px" :
 					computed;
@@ -9084,7 +12687,7 @@ jQuery.each( [ "top", "left" ], function( i, prop ) {
 // Create innerHeight, innerWidth, height, width, outerHeight and outerWidth methods
 jQuery.each( { Height: "height", Width: "width" }, function( name, type ) {
 	jQuery.each( { padding: "inner" + name, content: type, "": "outer" + name }, function( defaultExtra, funcName ) {
-		// margin is only for outerHeight, outerWidth
+		// Margin is only for outerHeight, outerWidth
 		jQuery.fn[ funcName ] = function( margin, value ) {
 			var chainable = arguments.length && ( defaultExtra || typeof margin !== "boolean" ),
 				extra = defaultExtra || ( margin === true || value === true ? "margin" : "border" );
@@ -9175,8 +12778,8 @@ jQuery.noConflict = function( deep ) {
 	return jQuery;
 };
 
-// Expose jQuery and $ identifiers, even in
-// AMD (#7102#comment:10, https://github.com/jquery/jquery/pull/557)
+// Expose jQuery and $ identifiers, even in AMD
+// (#7102#comment:10, https://github.com/jquery/jquery/pull/557)
 // and CommonJS for browser emulators (#13566)
 if ( typeof noGlobal === strundefined ) {
 	window.jQuery = window.$ = jQuery;
@@ -9188,3 +12791,22 @@ if ( typeof noGlobal === strundefined ) {
 return jQuery;
 
 }));
+
+},{}],14:[function(require,module,exports){
+module.exports = require("./lib/randomstring");
+},{"./lib/randomstring":15}],15:[function(require,module,exports){
+var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghiklmnopqrstuvwxyz';
+
+exports.generate = function(length) {
+  length = length ? length : 32;
+  
+  var string = '';
+  
+  for (var i = 0; i < length; i++) {
+    var randomNumber = Math.floor(Math.random() * chars.length);
+    string += chars.substring(randomNumber, randomNumber + 1);
+  }
+  
+  return string;
+}
+},{}]},{},[1]);
