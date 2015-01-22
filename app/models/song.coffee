@@ -7,8 +7,6 @@ normalizeNewline = require 'normalize-newline'
 fs = require 'fs'
 path = require 'path'
 
-Document = require 'songdown-compiler'
-
 
 class Song
   constructor: (fname, @songDir) ->
@@ -48,10 +46,12 @@ class Song
 
     songs
 
-  toHtml: ->
-    text = normalizeNewline fs.readFileSync(@location).toString()
-    doc = new Document text
-    doc.toHtml()
+  prepareSource: ->
+    source = normalizeNewline fs.readFileSync(@location).toString()
+
+    # Fix up the new lines in the file so that the source can be inserted into the client via a
+    # JavaScript string. Not exactly sure why this works. :/
+    source.replace /\n/g, '\\n'
 
 
 module.exports = Song

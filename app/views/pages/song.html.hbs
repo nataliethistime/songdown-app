@@ -15,9 +15,7 @@
   <h1 class="center-text">{{artist}} - {{track}}</h1>
 
 
-  <div id="song" style="display: none;">
-    {{{html}}}
-  </div>
+  <div id="song" style="display: none;"></div>
 
 
   <div id="sidebar">
@@ -66,6 +64,7 @@
     }
   ];
   window.FNAME = '{{fname}}';
+  window.SOURCE = '{{source}}';
 </script>
 
 {{#js "js/song"}}{{/js}}

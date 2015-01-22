@@ -1,6 +1,7 @@
 'use strict'
 
 $ = require 'jquery'
+Song = require 'songdown-compiler'
 
 FONT_SIZE = 16
 FADE_TIME = 300
@@ -17,10 +18,17 @@ init = ->
   $el = $ '#themeSelector'
   $el.append "<option value=\"#{theme.url}\">#{theme.name}</option>" for theme in THEMES
 
+  initSong()
   initEvents()
   initTheme()
   showContent()
 
+
+initSong = ->
+  # Compile the thing.
+  song = new Song window.SOURCE
+  $ '#song'
+    .html song.toHtml()
 
 initEvents = ->
   $ '#fontSize'

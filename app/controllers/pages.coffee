@@ -13,10 +13,9 @@ module.exports.index = ->
 
 
 module.exports.song = ->
-  @fname = @param 'fname'
-  song = new Song @fname, @app.get 'songDir'
-  {@artist, @track} = song
-  @html = song.toHtml()
+  song = new Song @param('fname'), @app.get 'songDir'
+  {@fname, @artist, @track} = song
+  @source = song.prepareSource()
   this.render()
 
 # module.exports.edit = ->
