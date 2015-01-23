@@ -51,4 +51,6 @@ module.exports = (next) ->
   bundle './coffee/index.coffee'
     .then ->
       bundle './coffee/song.coffee'
+    .then ->
+      bundle './coffee/edit.coffee'
     .then next

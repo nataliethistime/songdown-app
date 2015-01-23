@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <title>Songdown Editor</title>
+
+  {{#css "css/theme-base.css"}}{{/css}}
+
+  {{! TODO: Should this become a theme selector? }}
+  {{#css "css/theme-colorful.css"}}{{/css}}
+
+  <style type="text/css">
+    #editor-container {
+      float: left;
+      width: 45%;
+    }
+    #editor {
+      transition: height 0.2s;
+      -webkit-transition: height 0.2s;
+      -moz-transition: height 0.2s;
+      width: 100%;
+    }
+    #preview-container  {
+      float: right;
+      width: 45%;
+    }
+    #content {
+      width: auto;
+      margin: 10px;
+    }
+    .song {
+      /* The theme-base CSS floats the song to the right, we need to negate that. */
+      float: none;
+    }
+  </style>
+</head>
+<body>
+  <div id="content">
+    <div id="editor-container">
+      <em>Enter Songdown</em>
+      <textarea id="editor">{{{source}}}</textarea>
+    </div>
+    <div id="preview-container">
+      <em>Preview</em>
+      <div id="preview" class="song"></div>
+    </div>
+  </div>
+</body>
+
+{{#js "js/edit"}}{{/js}}
+
+</html>

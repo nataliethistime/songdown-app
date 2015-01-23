@@ -131,25 +131,3 @@ a.song-link {
         width: 100%;
     }
 }
-
-/* Base level styles so that themes don't have repeated things */
-#song {
-    font-family: monospace;
-    width: 75%;
-    float: left;
-}
-
-#sidebar {
-    width: 20%;
-    float: right;
-}
-
-.verse-chords, .verse-lyrics {
-    margin-left: 10%;
-    white-space: pre;
-    font-family: monospace;
-}
-
-.verse-title {
-    margin-left: 5%;
-}

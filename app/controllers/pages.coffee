@@ -15,8 +15,10 @@ module.exports.index = ->
 module.exports.song = ->
   song = new Song @param('fname'), @app.get 'songDir'
   {@fname, @artist, @track} = song
-  @source = song.prepareSource()
-  this.render()
+  @source = song.escapeNewlines()
+  @render()
 
-# module.exports.edit = ->
-  # Do Stuff!
+module.exports.edit = ->
+  song = new Song @param('fname'), @app.get 'songDir'
+  @source = song.load()
+  @render()

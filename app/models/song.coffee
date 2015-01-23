@@ -11,6 +11,8 @@ path = require 'path'
 class Song
   constructor: (fname, @songDir) ->
 
+    return null if not fname or not @songDir
+
     [@fname, @location, @artist, @track] = @handleNames fname
     @names = {@fname, @location, @artist, @track}
 
@@ -27,13 +29,6 @@ class Song
 
     [fname.trim(), location, artist.trim(), track.trim()]
 
-  # The Node docs state fs.exists() to be an anti-pattern. This is because the files can change
-  # between checking and opening. It would be better to just open the file and handle the error.
-  # However, the songs diretory will never change during the running of the app and doing latter
-  # implementation would result in the need of a callback or a try/catch. This is much easer and
-  # won't actually cause the problems specified in the docs. :)
-  exists: -> fs.existsSync @location
-
   loadSongs: (songDir) ->
 
     songs = {}
@@ -46,8 +41,17 @@ class Song
 
     songs
 
-  prepareSource: ->
-    source = normalizeNewline fs.readFileSync(@location).toString()
+  # The Node docs state fs.exists() to be an anti-pattern. This is because the files can change
+  # between checking and opening. It would be better to just open the file and handle the error.
+  # However, the songs diretory will never change during the running of the app and doing latter
+  # implementation would result in the need of a callback or a try/catch. This is much easer and
+  # won't actually cause the problems specified in the docs. :)
+  exists: -> fs.existsSync @location
+
+  load: -> if @exists() then normalizeNewline(fs.readFileSync(@location).toString()) else ''
+
+  escapeNewlines: ->
+    source = @load()
 
     # Fix up the new lines in the file so that the source can be inserted into the client via a
     # JavaScript string. Not exactly sure why this works. :/

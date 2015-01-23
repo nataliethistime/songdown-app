@@ -3,18 +3,18 @@
 This is the web application component of the Songdown project. [![Dependency Status](https://david-dm.org/1vasari/songdown-app.svg?style=flat-square)](https://david-dm.org/1vasari/songdown-app)
 
 # TO-DO (Just some random thoughts)
-- Compile songdown on the client side.
-- "View source" button on the song view (Hence we need to compile client side.)
-- Songdown editor with preview on the side (Again, needing the ability to compile client side).
+- Split intermingled pieces of code into separate modules.
+- Move away from CoffeeScript (slowly) because it's not fun to get to work.
 - Add support for PDF files (sheet music, I guess?)
 
 # Changes
 
-### 0.1.0
+### 0.0.3
 - Use Browserify to bundle dependencies in the front-end.
 - Added a `.gitignore` file to not track the Browserified files.
 - Remove anchors in the song view.
 - Compile the song into HTML on the client side.
+- Implemented the *Songdown Editor* which is a side by side editor and preview page, making is really easy to mess with the Songdown syntax.
 
 ### 0.0.1 (2015-1-18)
 - Initial moving of the application from an Express application to a Locomotive app. Note: most things are not really tested in the new environment, most likely there are a lot of bugs lurking.

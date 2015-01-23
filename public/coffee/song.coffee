@@ -80,7 +80,9 @@ initEvents = ->
   $ '#editButton'
     .off()
     .click (event) ->
-      alert 'This feature is coming soon!'
+      # We're outta here!
+      url = window.location.href
+      window.location.assign url.replace(/\/song\//, '/edit/')
 
 
 initTheme = ->
