@@ -2,6 +2,7 @@
 
 $ = require 'jquery'
 Song = require 'songdown-compiler'
+transpose = require 'songdown-transpose'
 
 FONT_SIZE = 16
 FADE_TIME = 300
@@ -62,8 +63,7 @@ initEvents = ->
 
         $ '.verse-chords'
           .each ->
-            line = $(@).text()
-            line = transposeLine line, increment
+            line = $(@).text().replace /\S+/g, (match) -> transpose match, increment
             $(@).html line
 
         $(this).fadeIn FADE_TIME
@@ -132,37 +132,6 @@ changeTheme = (url) ->
   localStorage.lastUsedTheme = url
   $ '#themeCssElement'
     .attr 'href', url
-
-
-transposeLine = (line, increment) ->
-  line.replace /\S+/g, (match) -> transposeChord match, increment
-
-
-# This method is based mostly off of this SO answer http://stackoverflow.com/a/7936871.
-# I've modified it to be more coffee-like and to output flats instead of sharps.
-transposeChord = (chord, increment) ->
-
-  splitted = chord.split '/'
-  if splitted.length > 1
-    return $.map splitted, (chordPart) -> transposeChord chordPart, increment
-      .join '/'
-
-  flatScale  = scale = 'C Db D Eb E F Gb G Ab A Bb B'.split ' '
-  sharpScale =         'C C# D D# E F F# G G# A A# B'.split ' '
-  root = chord.charAt 0
-
-  if chord.length > 1
-    if chord.charAt(1) is '#'
-      root += '#'
-      scale = sharpScale
-    else if chord.charAt(1) is 'b'
-      root += 'b'
-      scale = flatScale
-
-  index = scale.indexOf root
-  return '??' if index is -1 # I hope this never happens. :P
-  newIndex = (index + increment + scale.length) % scale.length
-  scale[newIndex] + chord.substring root.length
 
 
 $ window.document

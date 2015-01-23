@@ -19,6 +19,7 @@ This is the web application component of the Songdown project.
 - Compile the song into HTML on the client side.
 - Implemented the *Songdown Editor* which is a side by side editor and preview page, making is really easy to mess with the Songdown syntax.
 - Added a "Fork me on Github" badge to the index page.
+- Moved the transpose feature to a separate module. Shorted the song view's Coffee code by about 40 lines. Smooth.
 
 ### 0.0.1 (2015-1-18)
 - Initial moving of the application from an Express application to a Locomotive app. Note: most things are not really tested in the new environment, most likely there are a lot of bugs lurking.

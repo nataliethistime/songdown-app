@@ -27,6 +27,7 @@
     "normalize-newline": "1.0.1",
     "randomstring": "1.0.3",
     "songdown-compiler": "0.2.2",
+    "songdown-transpose": "0.1.0",
     "through": "2.3.6",
     "uglify-js": "2.4.16"
   },
