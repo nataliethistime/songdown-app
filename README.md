@@ -1,6 +1,9 @@
 # songdown-app
 
-This is the web application component of the Songdown project. [![Dependency Status](https://david-dm.org/1vasari/songdown-app.svg?style=flat-square)](https://david-dm.org/1vasari/songdown-app)
+This is the web application component of the Songdown project.
+
+[![Code Climate](https://codeclimate.com/github/1vasari/songdown-app/badges/gpa.svg)](https://codeclimate.com/github/1vasari/songdown-app)
+[![Dependency Status](https://david-dm.org/1vasari/songdown-app.svg?style=flat-square)](https://david-dm.org/1vasari/songdown-app)
 
 # TO-DO (Just some random thoughts)
 - Split intermingled pieces of code into separate modules.
