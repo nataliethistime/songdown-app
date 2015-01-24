@@ -9,32 +9,15 @@ through = require 'through'
 fs = require 'fs'
 path = require 'path'
 
-# Compile CoffeeScript code.
-coffeeify = (file) ->
-  data = ''
-
-  write = (buf) -> data += buf
-
-  # Only compile coffee code
-  if  file.match /\.coffee$/
-    through write, ->
-      this.queue coffee.compile data
-      this.queue null
-  else
-    through write, ->
-      this.queue data
-      this.queue null
-
 
 basedir = null
 bundle = (file) ->
   new Promise (resolve, reject) ->
-    b = browserify file, {basedir, extensions: ['.coffee']}
-    b.transform coffeeify
+    b = browserify file, {basedir}
     b.bundle (err, buf) ->
-      reject err if err?
+      reject(err) if err?
 
-      newPath = path.join basedir, file.replace /coffee/g, 'js'
+      newPath = path.join basedir, 'build', file
       mkdirp.sync path.join newPath, '..' # newPath has the file on the end, so '..' to remove it.
 
       # TODO: this should have a try/catch thingo!
@@ -48,9 +31,9 @@ module.exports = (next) ->
   console.log 'Bundling client code.'
   basedir = @get 'publicDir'
 
-  bundle './coffee/index.coffee'
+  bundle './js/index.js'
     .then ->
-      bundle './coffee/song.coffee'
+      bundle './js/song.js'
     .then ->
-      bundle './coffee/edit.coffee'
+      bundle './js/edit.js'
     .then next

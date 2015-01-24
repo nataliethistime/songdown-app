@@ -17,7 +17,7 @@ This is the web application component of the Songdown project.
 - Added a `.gitignore` file to not track the Browserified files.
 - Remove anchors in the song view.
 - Compile the song into HTML on the client side.
-- Implemented the *Songdown Editor* which is a side by side editor and preview page, making is really easy to mess with the Songdown syntax.
+- Implemented the *Songdown Editor* which is a side by side editor and preview page, making it really easy to mess with the Songdown syntax.
 - Added a "Fork me on Github" badge to the index page.
 - Moved the transpose feature to a separate module. Shorted the song view's Coffee code by about 40 lines. Smooth.
 

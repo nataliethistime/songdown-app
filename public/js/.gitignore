@@ -1,5 +1,0 @@
-
-# All the code for the front-end here is written in CoffeeScript. This directory is
-# the output directory from Browserify and everything in it needs to be ignored.
-
-*.js
