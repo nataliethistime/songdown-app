@@ -9,7 +9,6 @@ var Song = require('../models/song');
 module.exports.index = function() {
   this.title = 'Songdown Collection';
   this.songs = Song.loadSongs(this.app.get('songDir'));
-  console.log(this.songs);
   this.render();
 };
 
