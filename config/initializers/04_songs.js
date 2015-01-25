@@ -36,7 +36,7 @@ module.exports = function(callback) {
 
     console.log('Downloading songdown-songs from Github.');
 
-    down('1Vasari/songdown-songs', songDir, function() {
+    down('1Vasari/songdown-songs', songDir, function(err) {
       // Only throwing the error if the songDir is empty allows the server to be run offline, using
       // files from a previous run when online.
       if (err && extfs.isEmptySync(songDir)) {
