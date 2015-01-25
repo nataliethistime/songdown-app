@@ -6,10 +6,13 @@ This is the web application component of the Songdown project.
 [![Dependency Status](https://david-dm.org/1vasari/songdown-app.svg?style=flat-square)](https://david-dm.org/1vasari/songdown-app)
 
 # TO-DO (Just some random thoughts)
-- Split intermingled pieces of code into separate modules.
+- Split intermingled pieces of code into separate modules, such as:
+  - theme selector
 - Add support for PDF files (sheet music, I guess?)
 
 # Changes
+
+### 0.1.0
 
 ### 0.0.3 (2015-1-25)
 - Use Browserify to bundle dependencies in the front-end.
