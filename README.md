@@ -14,11 +14,11 @@ This is the web application component of the Songdown project.
 ### 0.0.3
 - Use Browserify to bundle dependencies in the front-end.
 - Added a `.gitignore` file to not track the Browserified files.
-- Remove anchors in the song view.
-- Compile the song into HTML on the client side.
-- Implemented the *Songdown Editor* which is a side by side editor and preview page, making it really easy to mess with the Songdown syntax.
 - Added a "Fork me on Github" badge to the index page.
+- Implemented the *Songdown Editor* which is a side by side editor and preview page, making it really easy to mess with the Songdown syntax.
+- Compile the song into HTML on the client side.
 - Moved the transpose code to a separate module. Shortened the song view's Coffee code by about 40 lines. Smooth.
+- Remove anchors in the song view.
 - Removed all CoffeeScript code from the entire project!!
 
 ### 0.0.1 (2015-1-18)
