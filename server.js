@@ -4,9 +4,6 @@ var locomotive = require('locomotive');
 var bootable = require('bootable');
 var environment = require('bootable-environment');
 
-// Get some Coffee on in the house!
-require('coffee-script/register');
-
 // Create a new application and initialize it with *required* support for
 // controllers and views.  Move (or remove) these lines at your own peril.
 var app = new locomotive.Application();
