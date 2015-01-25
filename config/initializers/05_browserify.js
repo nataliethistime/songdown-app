@@ -1,7 +1,6 @@
 'use strict';
 
 var browserify = require('browserify');
-var coffee = require('coffee-script');
 var mkdirp = require('mkdirp');
 var Promise = require('bluebird');
 var through = require('through');
