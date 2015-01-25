@@ -17,7 +17,7 @@ app.phase(locomotive.boot.views());
 app.phase(environment(__dirname + '/config/environments'));
 app.phase(bootable.initializers(__dirname + '/config/initializers'));
 app.phase(locomotive.boot.routes(__dirname + '/config/routes'));
-app.phase(locomotive.boot.httpServer(5000, '0.0.0.0'));
+app.phase(locomotive.boot.httpServer(process.env.PORT || 5000, '0.0.0.0'));
 
 // Boot the application.  The phases registered above will be executed
 // sequentially, resulting in a fully initialized server that is listening
