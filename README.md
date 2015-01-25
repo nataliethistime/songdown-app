@@ -11,7 +11,7 @@ This is the web application component of the Songdown project.
 
 # Changes
 
-### 0.0.3
+### 0.0.3 (2015-1-25)
 - Use Browserify to bundle dependencies in the front-end.
 - Added a `.gitignore` file to not track the Browserified files.
 - Added a "Fork me on Github" badge to the index page.
