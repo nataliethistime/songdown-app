@@ -1,4 +1,8 @@
 /* Base level styles for relevant for each theme. */
+.song {
+  font-family: monospace;
+}
+
 .verse-chords, .verse-lyrics {
   margin-left: 10%;
   white-space: pre;
