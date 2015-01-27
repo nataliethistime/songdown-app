@@ -12,7 +12,8 @@ This is the web application component of the Songdown project.
 
 # Changes
 
-### 0.1.0
+### 0.0.4
+- Split the CSS for the index page and the song page.
 
 ### 0.0.3 (2015-1-25)
 - Use Browserify to bundle dependencies in the front-end.

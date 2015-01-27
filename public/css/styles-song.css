@@ -1,0 +1,35 @@
+body {
+    font-family: "Segoe UI", "Arial";
+}
+
+.center-text {
+    text-align: center;
+}
+
+.song {
+  font-family: monospace;
+  width: 75%;
+  float: left;
+}
+
+.sidebar {
+  width: 20%;
+  float: right;
+}
+
+@media print {
+    /* Do this to avoid cutting verses off across pages. */
+    .verse-wrap {
+        page-break-inside: avoid;
+    }
+
+    /* Hide sidebar */
+    .sidebar {
+        display: none;
+    }
+
+    /* max width */
+    .song {
+        width: 100%;
+    }
+}

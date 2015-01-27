@@ -1,0 +1,73 @@
+body {
+  font-family: "Segoe UI", "Arial";
+}
+
+.center-text {
+  text-align: center;
+}
+
+.header {
+  padding: 10px;
+}
+
+hr {
+  /* change color and thickness */
+  border: none;
+  height: 2px;
+  background-color: black;
+
+  width: 80%;
+}
+
+hr.small {
+  width: 40%;
+}
+
+hr.thick {
+  height: 4px;
+}
+
+body {
+
+  /* This only works when the user's browser supports CSS3. */
+  transition: background 0.5s linear;
+
+  /* This makes sure the image is in the right place all the time. */
+  background-repeat: no-repeat;
+  background-position: center center fixed;
+  background-size: cover;
+}
+
+.box {
+  display: block;
+  background: rgba(255, 255, 255, 0.6);
+  padding: 20px;
+  border-radius: 3px;
+  margin: 10px 5px;
+  box-shadow: 1px 1px 4px rgba(0, 0, 0, 0.4);
+
+  /* Centering and stuff */
+  width: 75%;
+  margin: 0 auto;
+  margin-top: 10px;
+}
+
+ul.songs {
+  margin: auto auto;
+  width: 70%;
+}
+
+li.song-link {
+  list-style: none;
+}
+
+a.song-link {
+  /* Make the urls slightly more pretty. */
+  text-decoration: none;
+  color: black;
+  font-size: 18px;
+}
+
+a.song-link:hover {
+  text-decoration: underline;
+}

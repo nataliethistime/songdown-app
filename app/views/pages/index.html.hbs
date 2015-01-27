@@ -4,17 +4,17 @@
 <head>
   <title>{{title}}</title>
 
-  {{#css "css/styles"}}{{/css}}
+  {{#css "css/styles-index"}}{{/css}}
 
 </head>
 
-<body class="index-bg">
+<body>
 
   <!-- Fork me on Github! -->
   <a href="https://github.com/1vasari/songdown-app" target="_blank"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://camo.githubusercontent.com/652c5b9acfaddf3a9c326fa6bde407b87f7be0f4/68747470733a2f2f73332e616d617a6f6e6177732e636f6d2f6769746875622f726962626f6e732f666f726b6d655f72696768745f6f72616e67655f6666373630302e706e67" alt="Fork me on GitHub" data-canonical-src="https://s3.amazonaws.com/github/ribbons/forkme_right_orange_ff7600.png"></a>
 
   <!-- A nice pretty header thing. -->
-  <div class="center-text" id="index-header">
+  <div class="center-text" class="header">
     <hr class="small thick" />
     <h1 class="center-text">~ {{title}} ~</h1>
     <hr class="small thick" />
@@ -23,22 +23,17 @@
   <!-- The rest of the page belongs here. -->
   <div class="box">
   {{#each songs}}
-  <h2 class="center-text">~ {{@key}} ~</h2>
-  <ul class="songs">
-  {{#each this}}
-    <li class="song-link">
-    <a class="song-link" href="/song/{{fname}}" target="_blank">
-      <span class="song-link-name">{{track}}</span>
-      <span class="song-link-button blue-button">Go</span>
-    </a>
-    </li>
-  {{/each}}
-  </ul>
-  <br /><hr /><br />
+    <h2 class="center-text">~ {{@key}} ~</h2>
+    <ul class="songs">
+    {{#each this}}
+      <li class="song-link">
+        <a class="song-link" href="/song/{{fname}}" target="_blank">{{track}}</a>
+      </li>
+    {{/each}}
+    </ul>
+    <br /><hr /><br />
   {{/each}}
   </div>
-
-  <img id="refresh-button" src="{{#assetPath 'img/refresh.png'}}{{/assetPath}}" title="Refresh the songs from Github" />
 </body>
 
 {{#js "build/js/index"}}{{/js}}
