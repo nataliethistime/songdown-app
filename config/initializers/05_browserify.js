@@ -12,7 +12,8 @@ var basedir = null;
 function bundle(file) {
   return new Promise(function(resolve, reject) {
     var b = browserify(file, {
-      basedir: basedir
+      basedir: basedir,
+      noParse: ['jquery']
     });
 
     b.bundle(function(err, buf) {
@@ -22,7 +23,7 @@ function bundle(file) {
       var newPath = path.join(basedir, 'build', file);
       mkdirp.sync(path.join(newPath, '..')); // Use '..' to cut the filename from the path.
 
-      // TODO: this *should* have error handling.
+      // TODO: this *should* have some kind of error handling.
       fs.writeFileSync(newPath, buf.toString());
 
       resolve();

@@ -31,9 +31,12 @@ $(document).ready(function() {
 
 
 function initSong() {
-  // Compile the thing.
-  var song = new Song(window.SOURCE);
-  $('#song').html(song.toHtml());
+  var source = window.SOURCE;
+  if (source) {
+    // Compile the thing.
+    var song = new Song(source);
+    $('#song').html(song.toHtml());
+  }
 }
 
 function initEvents() {
@@ -130,7 +133,9 @@ function changeTheme(url) {
     return $(this).val() === url;
   })[0];
 
-  if (!el) return;
+  if (!el) {
+    return;
+  }
 
   // Set it as the selected value and load the theme's CSS.
   $(el).attr('selected', true);

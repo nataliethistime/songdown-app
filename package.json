@@ -25,7 +25,7 @@
     "ncp": "1.0.1",
     "normalize-newline": "1.0.1",
     "randomstring": "1.0.3",
-    "songdown-compiler": "0.2.2",
+    "songdown-compiler": "0.2.4",
     "songdown-transpose": "0.1.0",
     "sprintf-js": "1.0.2",
     "through": "2.3.6",

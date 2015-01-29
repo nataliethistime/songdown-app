@@ -14,15 +14,24 @@ module.exports.index = function() {
 
 module.exports.song = function() {
   var song = new Song(this.param('fname'), this.app.get('songDir'));
-  this.fname = song.fname;
-  this.artist = song.artist;
-  this.track = song.track;
-  this.source = song.escapeNewlines();
-  this.render();
+  if (song.exists()) {
+    this.fname = song.fname;
+    this.artist = song.artist;
+    this.track = song.track;
+    this.source = song.escape();
+    this.render();
+  } else {
+    // TODO: make a 404 page!
+  }
 };
 
 module.exports.edit = function() {
-  var song = new Song(this.param('fname'), this.app.get('songDir'));
-  this.source = song.load();
+  var fname = this.param('fname');
+  if (fname) {
+    var song = new Song(this.param('fname'), this.app.get('songDir'));
+    this.source = song.load();
+  } else {
+    this.source = '';
+  }
   this.render();
 };

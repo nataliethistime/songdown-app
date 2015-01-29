@@ -14,6 +14,10 @@ This is the web application component of the Songdown project.
 
 ### 0.0.4
 - Split the CSS for the index page and the song page.
+- Fixed trying to go to `/edit` (without specifying a song name) as it was throwing undefined errors and all that jazz.
+- Made the default front size for the editor that same as the song view (16 pixels).
+- Browserify no longer parses jQuery because there are no `require()` calls in the jQuery source.
+- Fixed incorrect rendering of `GOTO`'s in the song view.
 
 ### 0.0.3 (2015-1-25)
 - Use Browserify to bundle dependencies in the front-end.

@@ -40,9 +40,9 @@ function Song(fname, songDir) {
     }
   };
 
-  this.escapeNewlines = function() {
+  this.escape = function() {
     var source = this.load();
-    return source.replace(/\n/g, '\\n');
+    return source.replace(/\n/g, '\\n').replace(/\'/g, '&#39;').replace(/"/g, '&quot;');
   };
 }
 
