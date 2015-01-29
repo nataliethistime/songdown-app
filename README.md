@@ -7,7 +7,7 @@ This is the web application component of the Songdown project.
 
 # Changes
 
-### 0.0.4
+### 0.0.4 (2015-1-29)
 - Split the CSS for the index page and the song page.
 - Fixed trying to go to `/edit` (without specifying a song name) as it was throwing undefined errors and all that jazz.
 - Made the default front size for the editor that same as the song view (16 pixels).
