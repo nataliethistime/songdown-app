@@ -28,17 +28,17 @@
     #preview {
       font-size: 16px;
     }
-    #content {
-      width: auto;
-      margin: 10px;
-    }
     .song {
       /* The theme-base CSS floats the song to the right, we need to negate that. */
       float: none;
     }
+    .center-text {
+      text-align: center;
+    }
   </style>
 </head>
 <body>
+  <p class="center-text">{{versionString}}</p>
   <div id="content">
     <div id="editor-container">
       <em>Enter Songdown</em>

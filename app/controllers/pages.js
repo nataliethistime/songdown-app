@@ -9,6 +9,7 @@ var Song = require('../models/song');
 module.exports.index = function() {
   this.title = 'Songdown Collection';
   this.songs = Song.loadSongs(this.app.get('songDir'));
+  this.versionString = this.app.get('versionString');
   this.render();
 };
 
@@ -19,6 +20,7 @@ module.exports.song = function() {
     this.artist = song.artist;
     this.track = song.track;
     this.source = song.escape();
+    this.versionString = this.app.get('versionString');
     this.render();
   } else {
     // TODO: make a 404 page!
@@ -33,5 +35,6 @@ module.exports.edit = function() {
   } else {
     this.source = '';
   }
+  this.versionString = this.app.get('versionString');
   this.render();
 };

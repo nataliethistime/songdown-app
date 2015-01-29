@@ -35,7 +35,8 @@ function initSong() {
   if (source) {
     // Compile the thing.
     var song = new Song(source);
-    $('#song').html(song.toHtml());
+    $('#song').html(song.toHtml())
+      .append('<br /><br /><p class="center-text">' + window.VERSION_STRING + '</p>');
   }
 }
 
