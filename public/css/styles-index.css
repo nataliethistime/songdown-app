@@ -7,24 +7,11 @@ body {
 }
 
 .header {
-  padding: 10px;
-}
-
-hr {
-  /* change color and thickness */
-  border: none;
-  height: 2px;
-  background-color: black;
-
-  width: 80%;
-}
-
-hr.small {
+  border: 6px solid black;
+  border-radius: 40px;
   width: 40%;
-}
-
-hr.thick {
-  height: 4px;
+  margin: 40px auto;
+  padding: 10px;
 }
 
 body {
@@ -34,7 +21,8 @@ body {
 
   /* This makes sure the image is in the right place all the time. */
   background-repeat: no-repeat;
-  background-position: center center fixed;
+  /* Chrome complains about this line. */
+  /*background-position: center center fixed;*/
   background-size: cover;
 }
 
@@ -48,16 +36,25 @@ body {
 
   /* Centering and stuff */
   width: 75%;
-  margin: 0 auto;
-  margin-top: 10px;
+  margin: 40px auto;
 }
 
-ul.songs {
+.artist-container {
   margin: auto auto;
-  width: 70%;
+  width: 80%;
+  border: 3px solid black;
+  border-radius: 20px;
+
+  margin-bottom: 40px;
 }
 
-li.song-link {
+ul {
+  -mox-columns: 2;
+  -webkit-columns: 2;
+  columns: 2;
+}
+
+li {
   list-style: none;
 }
 

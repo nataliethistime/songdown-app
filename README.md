@@ -18,6 +18,7 @@ This is the web application component of the Songdown project.
 - Made the default front size for the editor that same as the song view (16 pixels).
 - Browserify no longer parses jQuery because there are no `require()` calls in the jQuery source.
 - Fixed incorrect rendering of `GOTO`'s in the song view.
+- Redesigned the index page.
 
 ### 0.0.3 (2015-1-25)
 - Use Browserify to bundle dependencies in the front-end.
