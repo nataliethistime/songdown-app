@@ -1,6 +1,5 @@
 'use strict';
 
-var _ = require('lodash');
 var Controller = require('locomotive').Controller;
 module.exports = new Controller();
 

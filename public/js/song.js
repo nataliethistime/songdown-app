@@ -18,7 +18,7 @@ $(document).ready(function() {
   setFontSize(FONT_SIZE);
 
   // Initialize the theme selector.
-  var $el = $('#themeSelector')
+  var $el = $('#themeSelector');
   _.each(THEMES, function(theme) {
     $el.append(sprintf('<option value="%s">%s</option>', theme.url, theme.name));
   });
@@ -70,7 +70,7 @@ function initEvents() {
 
         $(this).html(line);
       });
-      $(this).fadeIn(FADE_TIME)
+      $(this).fadeIn(FADE_TIME);
     });
   });
 
@@ -81,7 +81,7 @@ function initEvents() {
     window.print();
   });
 
-  $('#editButton').off().click(function(event) {
+  $('#editButton').off().click(function() {
     // We're outta here!
     var url = window.location.href;
     window.location.assign(url.replace(/\/song\//, '/edit/'));
@@ -106,7 +106,11 @@ function setFontSize(size) {
 
 function changeViewMode(num) {
   num = parseInt(num, 10);
-  if (isNaN(num)) return;
+
+  if (isNaN(num)) {
+    return;
+  }
+
   switch (num) {
     // Show lyrics and chords
     case 0:
