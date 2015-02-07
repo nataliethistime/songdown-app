@@ -7,6 +7,9 @@ This is the web application component of the Songdown project.
 
 # Changes
 
+### 0.1.0
+- Added a link to the Syntax Help on the edit page.
+
 ### 0.0.4 (2015-1-29)
 - Split the CSS for the index page and the song page.
 - Fixed trying to go to `/edit` (without specifying a song name) as it was throwing undefined errors and all that jazz.
