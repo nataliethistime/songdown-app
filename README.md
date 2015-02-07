@@ -7,11 +7,13 @@ This is the web application component of the Songdown project.
 
 # Changes
 
-### 0.1.0
+### 0.1.0 (2015-02-07)
 - On the Edit page there is now a link to `The Songdown Syntax` wiki page.
 - Included a copy of the changes made to this code base before the migration to the Locomotive.js library occurred.
+- Correct the format of some of the dates in the changes log.
+- Other subtle changes which only I will care about.
 
-### 0.0.4 (2015-1-29)
+### 0.0.4 (2015-01-29)
 - Split the CSS for the index page and the song page.
 - Fixed trying to go to `/edit` (without specifying a song name) as it was throwing undefined errors and all that jazz.
 - Made the default front size for the editor that same as the song view (16 pixels).
@@ -19,7 +21,7 @@ This is the web application component of the Songdown project.
 - Fixed incorrect rendering of `GOTO`'s in the song view.
 - Redesigned the index page.
 
-### 0.0.3 (2015-1-25)
+### 0.0.3 (2015-01-25)
 - Use Browserify to bundle dependencies in the front-end.
 - Added a `.gitignore` file to not track the Browserified files.
 - Added a "Fork me on Github" badge to the index page.
@@ -29,7 +31,7 @@ This is the web application component of the Songdown project.
 - Remove anchors in the song view.
 - Removed all CoffeeScript code from the entire project!!
 
-### 0.0.1 (2015-1-18)
+### 0.0.1 (2015-01-18)
 - Initial moving of the application from an Express application to a Locomotive app. Note: most things are not really tested in the new environment, most likely there are a lot of bugs lurking.
 
 # Old Changes
