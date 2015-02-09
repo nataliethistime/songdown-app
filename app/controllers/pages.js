@@ -22,7 +22,7 @@ module.exports.song = function() {
     this.versionString = this.app.get('versionString');
     this.render();
   } else {
-    // TODO: make a 404 page!
+    this.render('missing');
   }
 };
 
@@ -37,3 +37,7 @@ module.exports.edit = function() {
   this.versionString = this.app.get('versionString');
   this.render();
 };
+
+module.exports.missing = function() {
+  this.render();
+}
