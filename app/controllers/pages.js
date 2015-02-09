@@ -22,7 +22,7 @@ module.exports.song = function() {
     this.versionString = this.app.get('versionString');
     this.render();
   } else {
-    this.render('missing');
+    this.render('notFound');
   }
 };
 
@@ -30,7 +30,12 @@ module.exports.edit = function() {
   var fname = this.param('fname');
   if (fname) {
     var song = new Song(this.param('fname'), this.app.get('songDir'));
-    this.source = song.load();
+    if (song.exists()) {
+      this.source = song.load();
+    } else {
+      this.render('notFound');
+      return;
+    }
   } else {
     this.source = '';
   }
@@ -38,6 +43,6 @@ module.exports.edit = function() {
   this.render();
 };
 
-module.exports.missing = function() {
+module.exports.notFound = function() {
   this.render();
 }
