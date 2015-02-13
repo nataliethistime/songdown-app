@@ -69,9 +69,9 @@ function initEvents() {
           // chord gets ignored by the transpose() function.
           if (match.charAt(0) === '(') {
             var str = match.slice(1);
-            return '(' + transpose(str, increment);
+            return '(' + (transpose(str, increment) || str);
           } else {
-            return transpose(match, increment);
+            return transpose(match, increment) || match;
           }
         });
 
