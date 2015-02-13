@@ -7,6 +7,10 @@ This is the web application component of the Songdown project.
 
 # Changes
 
+### 0.1.3
+- Removed the release and deploy script. #dumbidea
+- Fixed transposing of chords when there were brackets involved.
+
 ### 0.1.1 (2015-02-13)
 - Added a 404 page for requests that don't go through.
 - Added a script which releases and deploys the site to Github and Heroku respectively.

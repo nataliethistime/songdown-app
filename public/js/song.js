@@ -65,7 +65,14 @@ function initEvents() {
       $('.verse-chords').each(function() {
 
         var line = $(this).text().replace(/\S+/g, function(match) {
-          return transpose(match, increment);
+          // We only need to handle a leading bracket because anything tailing the root note of the
+          // chord gets ignored by the transpose() function.
+          if (match.charAt(0) === '(') {
+            var str = match.slice(1);
+            return '(' + transpose(str, increment);
+          } else {
+            return transpose(match, increment);
+          }
         });
 
         $(this).html(line);
