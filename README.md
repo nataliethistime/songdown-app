@@ -7,7 +7,7 @@ This is the web application component of the Songdown project.
 
 # Changes
 
-### 0.1.3
+### 0.1.3 (2015-02-14)
 - Removed the release and deploy script. #dumbidea
 - Fixed transposing of chords when there were brackets involved.
 
