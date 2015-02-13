@@ -7,6 +7,10 @@ This is the web application component of the Songdown project.
 
 # Changes
 
+### 0.1.1 (2015-02-13)
+- Added a 404 page for requests that don't go through.
+- Added a script which releases and deploys the site to Github and Heroku respectively.
+
 ### 0.1.0 (2015-02-07)
 - On the Edit page there is now a link to `The Songdown Syntax` wiki page.
 - Included a copy of the changes made to this code base before the migration to the Locomotive.js library occurred.
