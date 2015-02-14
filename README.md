@@ -7,6 +7,9 @@ This is the web application component of the Songdown project.
 
 # Changes
 
+### 0.0.5 (2015-02-14)
+- Implemented printing from the "edit song" page.
+
 ### 0.1.4 (2015-02-14)
 - Fixed an issue where words inside brackets in chord lines were incorrectly being dealt with when transposing.
 

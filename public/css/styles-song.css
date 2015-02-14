@@ -1,10 +1,3 @@
-body {
-    font-family: "Segoe UI", "Arial";
-}
-
-.center-text {
-    text-align: center;
-}
 
 .song {
   width: 75%;
@@ -17,18 +10,14 @@ body {
 }
 
 @media print {
-    /* Do this to avoid cutting verses off across pages. */
-    .verse-wrap {
-        page-break-inside: avoid;
-    }
 
-    /* Hide sidebar */
-    .sidebar {
-        display: none;
-    }
+  /* Hide sidebar */
+  .sidebar {
+    display: none;
+  }
 
-    /* max width */
-    .song {
-        width: 100%;
-    }
+  /* max width */
+  .song {
+    width: 100%;
+  }
 }

@@ -12,3 +12,10 @@
 .verse-title {
   margin-left: 5%;
 }
+
+@media print {
+  /* Do this to avoid cutting verses off across pages. */
+  .verse-wrap {
+      page-break-inside: avoid;
+  }
+}

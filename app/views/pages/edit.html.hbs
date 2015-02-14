@@ -4,44 +4,14 @@
 <head>
   <title>Songdown Editor</title>
 
-  {{#css "css/theme-base.css"}}{{/css}}
-
   {{! TODO: Should this become a theme selector? }}
-  {{#css "css/theme-colorful.css"}}{{/css}}
+  {{#css "css/theme-base"}}{{/css}}
+  {{#css "css/theme-colorful"}}{{/css}}
 
-  <style type="text/css">
-    #editor-container {
-      float: left;
-      width: 45%;
-    }
-    #editor {
-      transition: height 0.2s;
-      -webkit-transition: height 0.2s;
-      -moz-transition: height 0.2s;
-      width: 100%;
-      font-size: 16px;
-    }
-    #preview-container  {
-      float: right;
-      width: 45%;
-    }
-    #preview {
-      font-size: 16px;
-    }
-    .song {
-      /* The theme-base CSS floats the song to the right, we need to negate that. */
-      float: none;
-    }
-    .center-text {
-      text-align: center;
-    }
-    body {
-      font-family: "Segoe UI", "Arial";
-    }
-  </style>
+  {{#css "css/styles-base"}}{{/css}}
+  {{#css "css/styles-edit"}}{{/css}}
 </head>
 <body>
-  <p class="center-text">{{versionString}}</p>
   <div id="content">
     <div id="editor-container">
       <em>Enter Songdown</em>
@@ -53,6 +23,7 @@
     <div id="preview-container">
       <em>Preview</em>
       <div id="preview" class="song"></div>
+      <p class="center-text">{{versionString}}</p>
     </div>
   </div>
 </body>
