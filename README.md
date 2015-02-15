@@ -7,7 +7,10 @@ This is the web application component of the Songdown project.
 
 # Changes
 
-### 0.0.5 (2015-02-14)
+### 0.2.1
+- Moved the app from storing songdown files in a Github repository to using Firebase as a backend.
+
+### 0.1.5 (2015-02-14)
 - Implemented printing from the "edit song" page.
 
 ### 0.1.4 (2015-02-14)

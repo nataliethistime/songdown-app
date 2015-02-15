@@ -15,9 +15,14 @@
   <div id="content">
     <div id="editor-container">
       <em>Enter Songdown</em>
-      <textarea id="editor">{{{source}}}</textarea>
+      <textarea id="editor"></textarea>
       <p>
         Don't know what this is? See the <a href="https://github.com/1vasari/songdown-app/wiki/The-Songdown-Syntax" target="_blank">help article.</a>
+      </p>
+      <p>
+        <input type="text" id="artist" value="{{artist}}">
+        <input type="text" id="track" value="{{track}}">
+        <button type="button" id="saveButton">Save!</button>
       </p>
     </div>
     <div id="preview-container">

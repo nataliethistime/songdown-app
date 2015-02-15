@@ -23,8 +23,13 @@ function bundle(file) {
       var newPath = path.join(basedir, 'build', file);
       mkdirp.sync(path.join(newPath, '..')); // Use '..' to cut the filename from the path.
 
-      // TODO: this *should* have some kind of error handling.
-      fs.writeFileSync(newPath, buf.toString());
+      try {
+        fs.writeFileSync(newPath, buf.toString());
+      } catch (e) {
+        console.log("\n\n");
+        console.log('fatal: Failed at ' + file);
+        throw e;
+      }
 
       resolve();
     });

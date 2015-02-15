@@ -9,8 +9,11 @@ var transpose = require('songdown-transpose');
 
 var FONT_SIZE = 16;
 var FADE_TIME = 300;
-
 var THEMES = window.THEMES;
+
+var Firebase = require('firebase');
+var firebase = new Firebase('https://songdown.firebaseio.com');
+var songsRef = firebase.child('songs');
 
 
 $(document).ready(function() {
@@ -23,21 +26,31 @@ $(document).ready(function() {
     $el.append(sprintf('<option value="%s">%s</option>', theme.url, theme.name));
   });
 
-  initSong();
-  initEvents();
-  initTheme();
-  showContent();
+  initSong(function() {
+    initEvents();
+    initTheme();
+    showContent();
+  });
 });
 
 
-function initSong() {
-  var source = window.SOURCE;
-  if (source) {
-    // Compile the thing.
-    var song = new Song(source);
-    $('#song').html(song.toHtml())
-      .append('<br /><br /><p class="center-text">' + window.VERSION_STRING + '</p>');
-  }
+function initSong(callback) {
+  var artistRef = songsRef.child(window.ARTIST);
+  var trackRef = artistRef.child(window.TRACK);
+
+  trackRef.on('value', function(snapshot) {
+
+    // TODO: check if the snapshot has data, if not, go to the 404 page!
+    if (snapshot.exists()) {
+      var data = snapshot.val();
+      var song = new Song(data.source);
+      $('#song').html(song.toHtml())
+        .append('<br /><br /><p class="center-text">' + window.VERSION_STRING + '</p>');
+      callback();
+    } else {
+      window.location.assign('/404');
+    }
+  });
 }
 
 function initEvents() {
