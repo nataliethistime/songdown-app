@@ -2,7 +2,6 @@
 
 var GeoPattern = require('geopattern');
 var randomString = require('randomstring').generate;
-var $ = require('jquery');
 
 function generateBackground() {
   var pattern = GeoPattern.generate(randomString(Math.random() * Math.random() * 100));
@@ -20,4 +19,5 @@ $(document).ready(function() {
   generateBackground();
   resetInterval();
   $(document).scroll(resetInterval);
+  var songList = new SongList();
 });

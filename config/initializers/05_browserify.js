@@ -17,9 +17,10 @@ function bundle(file) {
     });
 
     b.bundle(function(err, buf) {
-      if (err != null) {
+      if (err) {
         reject(err);
       }
+
       var newPath = path.join(basedir, 'build', file);
       mkdirp.sync(path.join(newPath, '..')); // Use '..' to cut the filename from the path.
 
@@ -43,5 +44,7 @@ module.exports = function(next) {
     bundle('./js/song.js');
   }).then(function() {
     bundle('./js/edit.js');
+  }).then(function() {
+    bundle('./js/globals.js');
   }).then(next);
 };

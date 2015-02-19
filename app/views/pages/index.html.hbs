@@ -18,21 +18,14 @@
   <h1 class="header center-text">~ {{title}} ~</h1>
 
   <div class="box">
-  {{#each songs}}
-    <fieldset class="artist-container">
-      <legend class="center-text"><h2>~ {{@key}} ~</h2></legend>
-      <ul class="songs">
-      {{#each this}}
-        <li><a class="song-link" href="/song/{{fname}}" target="_blank">{{track}}</a></li>
-      {{/each}}
-      </ul>
-    </fieldset>
-  {{/each}}
+
 
   <p class="center-text">{{versionString}}</p>
   </div>
 </body>
 
+{{#js "build/js/globals"}}{{/js}}
+{{#js "js/templates"}}{{/js}}
 {{#js "build/js/index"}}{{/js}}
 
 </html>
