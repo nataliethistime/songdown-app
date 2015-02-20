@@ -6,4 +6,9 @@ module.exports = function() {
   this.match('edit/:artist/:track', 'pages#edit');
   this.match('song/:artist/:track', 'pages#song');
   this.match('*', 'pages#notFound');
+
+  this.match('api/getSong', 'api#getSong', {via: 'post'});
+  this.match('api/setSong', 'api#setSong', {via: 'post'});
+
+  this.match('api/getTopSongs', 'api#getTopSongs', {via: 'post'});
 };

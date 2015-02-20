@@ -7,41 +7,79 @@ var FADE_TIME = 500;
 
 function save() {
   var data = {
-    source: $('#editor').val(),
-    artist: $('#artist').val(),
-    track: $('#track').val(),
-    views: 1
+    song: {
+      source: $('#editor').val(),
+      artist: $('#artist').val(),
+      track: $('#track').val()
+    }
   };
+
+  var url = window.location.origin + '/api/setSong';
+  request
+    .post(url, {json: true, form: data}, function(err, res, body) {
+      console.log(body);
+      if (body.success) {
+        alert('Saved!');
+      } else {
+        console.log('Error!');
+      }
+    });
 }
 
 function loadSource(callback) {
-  var artist = $('#artist').val();
-  var track = $('#track').val()
+  var artist = window.ARTIST;
+  var track = window.TRACK;
 
   if (!artist || !track) {
     callback();
     return;
   }
 
-    // var data = snapshot.val();
-    // $('#editor').val(data.source);
-    // callback();
+  var params = {
+    json: true,
+    form: {
+      song: {
+        artist: artist,
+        track: track
+      }
+    }
+  };
+
+  request
+    .post(window.location.origin + '/api/getSong', params, function(err, res, body) {
+      console.log(body);
+      if (!body || !body.source) {
+        updateEditor("**Hello! You're making a new song!**");
+        updateViewsCount(0);
+      } else {
+        updateEditor(body.source);
+        updateViewsCount(body.views);
+      }
+      callback();
+    });
 }
 
-function updatePreview() {
-  var source = $('#editor').val();
+function updateEditor(source) {
+  $('#editor').html(source);
+  updatePreview(source);
+}
+
+function updatePreview(source) {
+  var source = (source || $('#editor').val()) || '';
   $('#preview').html(new Song(source).toHtml());
 }
 
+function updateViewsCount(count) {
+  $('#viewsCount').html(count);
+}
+
 $(document).ready(function() {
-  $('#editor').autosize().keyup(updatePreview);
   $('#editor, #preview').hide();
 
   loadSource(function() {
-    console.log('test')
-    updatePreview();
+    $('#saveButton').click(save);
+    $('#editor').autosize().keyup(updatePreview);
     $('#editor, #preview').fadeIn(FADE_TIME);
     $('#editor').trigger('autosize.resize');
-    $('#saveButton').click(save);
   });
 });

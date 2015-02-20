@@ -1,7 +1,5 @@
 'use strict';
 
-var $ = require('jquery');
-var _ = require('lodash');
 var sprintf = require('sprintf-js').sprintf;
 
 var Song = require('songdown-compiler');
@@ -22,7 +20,7 @@ $(document).ready(function() {
     $el.append(sprintf('<option value="%s">%s</option>', theme.url, theme.name));
   });
 
-  initSong(function() {
+  getSong(function() {
     initEvents();
     initTheme();
     showContent();
@@ -30,9 +28,45 @@ $(document).ready(function() {
 });
 
 
-function initSong(callback) {
-  // Probably don't have anything to put here anymore.
-  callback();
+function getSong(callback) {
+  var artist = window.ARTIST;
+  var track = window.TRACK;
+
+  if (!artist || !track) {
+    callback();
+    return;
+  }
+
+  var params = {
+    json: true,
+    form: {
+      song: {
+        artist: artist,
+        track: track
+      }
+    }
+  };
+
+  request
+    .post(window.location.origin + '/api/getSong', params, function(err, res, body) {
+      console.log(body);
+      if (!body || !body.source) {
+        window.location.assign(window.location.origin + '/404');
+      } else {
+        updateView(body.source);
+        updateViewsCount(body.views);
+      }
+      callback();
+    });
+}
+
+function updateView(source) {
+  var song = new Song(source);
+  $('#song').html(song.toHtml());
+}
+
+function updateViewsCount(count) {
+  $('#viewsCount').html(count);
 }
 
 function initEvents() {

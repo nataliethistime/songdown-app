@@ -14,10 +14,22 @@ function resetInterval() {
   interval = setInterval(generateBackground, 60 * 1000);
 }
 
-$(document).ready(function() {
+function initBackground() {
   // Do the background thang.
   generateBackground();
   resetInterval();
   $(document).scroll(resetInterval);
-  var songList = new SongList();
+}
+
+function loadTopSongs() {
+  var url = window.location.origin + '/api/getTopSongs';
+  request
+    .post(url, {json: true}, function(err, req, body) {
+      console.log(body);
+    });
+}
+
+$(document).ready(function() {
+  initBackground();
+  loadTopSongs();
 });

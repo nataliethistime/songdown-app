@@ -50,6 +50,10 @@
     <br />
     <button type="button" id="printButton">Print!</button>
     <button type="button" id="editButton">Edit This Song</button>
+    <br />
+    <p>
+      Views: <span id="viewsCount"></span>
+    </p>
   </div>
 </body>
 
@@ -69,6 +73,7 @@
   window.TRACK = '{{track}}';
 </script>
 
+{{#js "build/js/globals"}}{{/js}}
 {{#js "build/js/song"}}{{/js}}
 
 </html>

@@ -7,3 +7,5 @@ window.$ = window.jQuery = require('jquery');
 window._ = require('lodash');
 window.Backbone = require('backbone');
 window.Backbone.$ = window.$;
+
+window.request = require('request');

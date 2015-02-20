@@ -24,6 +24,9 @@
         <input type="text" id="track" value="{{track}}">
         <button type="button" id="saveButton">Save!</button>
       </p>
+      <p>
+        Views: <span id="viewsCount"></span>
+      </p>
     </div>
     <div id="preview-container">
       <em>Preview</em>
@@ -32,6 +35,11 @@
     </div>
   </div>
 </body>
+
+<script type="text/javascript">
+window.ARTIST = '{{artist}}';
+window.TRACK  = '{{track}}';
+</script>
 
 {{#js "build/js/globals"}}{{/js}}
 {{#js "js/templates"}}{{/js}}
