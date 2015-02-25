@@ -15,21 +15,59 @@ function resetInterval() {
 }
 
 function initBackground() {
+  // TODO: make this shit MVC friendly.
   // Do the background thang.
   generateBackground();
   resetInterval();
   $(document).scroll(resetInterval);
 }
 
-function loadTopSongs() {
-  var url = window.location.origin + '/api/getTopSongs';
-  request
-    .post(url, {json: true}, function(err, req, body) {
-      console.log(body);
-    });
-}
+var Song = Backbone.Model.extend({
+  mutators: {
+    fullName: function() {
+      return this.get('artist') + ' - ' + this.get('track');
+    }
+  }
+});
+
+var Songs = Backbone.Collection.extend({
+  model: Song,
+  fetch: function() {
+    Songdown.apiRequest('getTopSongs', undefined, function(data) {
+      _.each(data, this.add, this);
+    }, this);
+  }
+})
+
+var SongView = Backbone.View.extend({
+  template: Handlebars.templates.songListItem,
+  render: function() {
+    this.$el.html(this.template(this.model.toJSON()));
+    return this;
+  }
+});
+
+var SongList = Backbone.View.extend({
+  events: {},
+  template: Handlebars.templates.songList,
+  initialize: function() {
+    this.collection = new Songs();
+    this.listenTo(this.collection, 'add', this.addOne);
+  },
+  render: function() {
+    this.$el.html(this.template());
+    this.collection.fetch();
+    this.$list = this.$('#song-list');
+    return this;
+  },
+  addOne: function(song) {
+    var view = new SongView({model: song});
+    this.$list.append(view.render().el);
+  }
+});
 
 $(document).ready(function() {
   initBackground();
-  loadTopSongs();
+  var songView = new SongList();
+  $('#content').html(songView.render().el);
 });
