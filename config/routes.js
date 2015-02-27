@@ -9,6 +9,6 @@ module.exports = function() {
 
   this.match('api/getSong', 'api#getSong', {via: 'post'});
   this.match('api/setSong', 'api#setSong', {via: 'post'});
-
   this.match('api/getTopSongs', 'api#getTopSongs', {via: 'post'});
+  this.match('api/search', 'api#search', {via: 'post'});
 };

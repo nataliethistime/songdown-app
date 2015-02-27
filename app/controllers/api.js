@@ -81,3 +81,29 @@ module.exports.getTopSongs = function() {
       jsonResponse(data, self);
     });
 };
+
+module.exports.search = function() {
+  var self = this;
+
+  Song.find({
+    $text : {
+      $search : this.param('search')
+    }
+  }, {
+    score : {
+      $meta: "textScore"
+    }
+  }).sort({
+    score : {
+      $meta : 'textScore'
+    }
+  }).exec(function(err, data) {
+
+    // TODO: handle errors better!
+    if (err) {
+      throw err;
+    }
+
+    jsonResponse(data, self);
+  });
+}

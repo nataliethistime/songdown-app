@@ -32,42 +32,63 @@ var Song = Backbone.Model.extend({
 
 var Songs = Backbone.Collection.extend({
   model: Song,
-  fetch: function() {
-    Songdown.apiRequest('getTopSongs', undefined, function(data) {
-      _.each(data, this.add, this);
-    }, this);
+  getTopSongs: function() {
+    Songdown.apiRequest('getTopSongs', undefined, this.reset, this);
+  },
+  search: function(search) {
+    if (search) {
+      Songdown.apiRequest('search', {search: search}, this.reset, this);
+    } else {
+      this.getTopSongs();
+    }
   }
-})
+});
 
-var SongView = Backbone.View.extend({
-  template: Handlebars.templates.songListItem,
+var Search = Backbone.View.extend({
+  events: {},
+  template: Handlebars.templates.search,
+  initialize: function() {
+    this.$el.html(this.template());
+
+    this.$input = this.$('#searchInput');
+    this.$results = this.$('#results');
+
+    this.$input.onTypeEnd(_.bind(this.search, this));
+
+    this.collection = new Songs();
+    this.listenTo(this.collection, 'reset', this.reset);
+
+    // Load up the "top songs" on the site.
+    this.collection.getTopSongs();
+  },
+  render: function() {
+    return this;
+  },
+  search: function() {
+    this.collection.search(this.$input.val());
+  },
+  reset: function(songs) {
+    this.$results.html('');
+    console.log(songs)
+    _.each(songs.models, this.addOne, this);
+  },
+  addOne: function(song) {
+    var view = new SearchItem({model: song});
+    this.$results.append(view.render().el);
+  }
+});
+
+var SearchItem = Backbone.View.extend({
+  template: Handlebars.templates.searchItem,
   render: function() {
     this.$el.html(this.template(this.model.toJSON()));
     return this;
   }
 });
 
-var SongList = Backbone.View.extend({
-  events: {},
-  template: Handlebars.templates.songList,
-  initialize: function() {
-    this.collection = new Songs();
-    this.listenTo(this.collection, 'add', this.addOne);
-  },
-  render: function() {
-    this.$el.html(this.template());
-    this.collection.fetch();
-    this.$list = this.$('#song-list');
-    return this;
-  },
-  addOne: function(song) {
-    var view = new SongView({model: song});
-    this.$list.append(view.render().el);
-  }
-});
-
 $(document).ready(function() {
   initBackground();
-  var songView = new SongList();
-  $('#content').html(songView.render().el);
+
+  var search = new Search();
+  $('#content').html(search.render().el);
 });

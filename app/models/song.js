@@ -9,5 +9,6 @@ var schema = new Schema({
   source: String,
   views: Number
 });
+schema.index({artist: 'text', track: 'text'})
 
 module.exports = mongoose.model('Song', schema);
