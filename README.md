@@ -1,3 +1,4 @@
+[![Stories in Ready](https://badge.waffle.io/1vasari/songdown-app.png?label=ready&title=Ready)](https://waffle.io/1vasari/songdown-app)
 # songdown-app
 
 This is the web application component of the Songdown project.
