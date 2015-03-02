@@ -46,5 +46,7 @@ module.exports = function(next) {
     bundle('./js/edit.js');
   }).then(function() {
     bundle('./js/globals.js');
+  }).then(function() {
+    bundle('./js/application.js');
   }).then(next);
 };

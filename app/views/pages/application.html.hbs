@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+  <title>Songdown</title>
+
+  {{#css "css/vendor/bootstrap"}}{{/css}}
+
+</head>
+<body>
+  <div class="container">
+    <nav class="navbar navbar-default">
+      <div class="container-fluid">
+        <!-- Brand and toggle get grouped for better mobile display -->
+        <div class="navbar-header">
+          <a class="navbar-brand" href="#">Songdown</a>
+
+          <ul class="nav navbar-nav">
+            <li class="active"><a href="#">Search</a></li>
+            <li><a href="#song">Song</a></li>
+            <li><a href="#edit">Edit</a></li>
+            <li><a href="#settings">Settings</a></li>
+          </ul>
+        </div>
+
+        <div class="collapse navbar-collapse navbar-right">
+          <button type="button" class="btn btn-default navbar-btn">Sign Out</button>
+          <p class="navbar-text">
+            <!-- TODO: this should show a correct username! -->
+            Signed in as <a href="#" class="navbar-link">1vasari</a>
+          </p>
+        </div>
+      </div>
+    </nav>
+  </div>
+
+  <div class="container" id="main">
+    <!-- Main content of the page goes here. -->
+  </div>
+</body>
+
+{{#js "build/js/globals"}}{{/js}}
+{{#js "js/templates"}}{{/js}}
+{{#js "build/js/application"}}{{/js}}
+
+</html>
