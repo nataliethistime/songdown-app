@@ -79,4 +79,4 @@ The following is the changes log form the old version of the Songdown web applic
 
 # License
 
-This project is made with :heart: under the MIT license by Nathan McCallum.
+This project is made with love, under the MIT license, by [@1vasari](https://twitter.com/1vasari). :heart:
