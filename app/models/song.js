@@ -25,8 +25,8 @@ function Song(fname, songDir) {
       location: this.location,
       artist: this.artist,
       track: this.track
-    }
-  }
+    };
+  };
 
   this.exists = function() {
     return fs.existsSync(this.location);
