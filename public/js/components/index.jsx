@@ -1,19 +1,22 @@
 'use strict';
 
 var React = require('react');
-var Reflux = require('reflux');
 
-var ArtistsList = require('js/components/artistsList');
+var Box = require('js/components/box');
+var Collection = require('js/components/collection');
+var ForkRibbon = require('js/components/forkRibbon');
+var Header = require('js/components/header');
 
 var Index = React.createClass({
   render: function() {
     return (
-      <div style={{
-        textAlign: 'center',
-      }}>
-        <h1>Songdown Collection</h1>
+      <div>
 
-        <ArtistsList />
+        <ForkRibbon />
+        <Header />
+        <Box>
+          <Collection />
+        </Box>
 
       </div>
     );

@@ -24,7 +24,9 @@ function Song(fname, songDir) {
       fname: this.fname,
       location: this.location,
       artist: this.artist,
-      track: this.track
+      track: this.track,
+      // Don't use track, use name.
+      name: this.track
     };
   };
 
@@ -47,6 +49,12 @@ function Song(fname, songDir) {
 }
 
 function loadSongs(songDir) {
+
+  if (!songDir) {
+    console.error('No songDir given to loadSongs()!!');
+    return {};
+  }
+
   var songs = {};
   var files = glob.sync('*.songdown', {
     cwd: songDir
@@ -55,9 +63,11 @@ function loadSongs(songDir) {
   _.each(files, function(fname) {
     var song = new Song(fname, songDir);
     if (!songs[song.artist]) {
-      songs[song.artist] = [];
+      songs[song.artist] = {};
     }
-    songs[song.artist].push(song.attributes());
+
+    var attrs = song.attributes();
+    songs[song.artist][attrs.name] = attrs;
   });
 
   return songs;
