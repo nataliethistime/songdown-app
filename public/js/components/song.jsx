@@ -28,18 +28,9 @@ var Song = React.createClass({
   },
 
   render: function() {
-    var thisIsDangerous = {
-      __html: (new Compiler(this.state.source)).toHtml()
-    };
-
-    var style = {
-      whiteSpace: 'pre',
-      fontFamily: 'monospace'
-    };
-
     return (
       <Box transparent={false}>
-        <div dangerouslySetInnerHTML={thisIsDangerous} style={style}></div>
+        <Compiler source={this.state.source} theme='default' />
       </Box>
     );
   }
