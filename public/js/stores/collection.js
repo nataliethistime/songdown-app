@@ -9,6 +9,10 @@ var CollectionActions = require('js/actions/collection');
 var CollectionStore = Reflux.createStore({
   listenables: CollectionActions,
 
+  getInitialState: function() {
+    return [];
+  },
+
   onLoad: function() {
 
     var handleData = function(data, textStatus, jqXHR) {

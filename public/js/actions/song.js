@@ -3,7 +3,8 @@
 var Reflux = require('reflux');
 
 var SongActions = Reflux.createActions([
-  'load'
+  'load',
+  'setSource'
 ]);
 
 module.exports = SongActions;

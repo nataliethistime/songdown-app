@@ -9,6 +9,10 @@ var SongActions = require('js/actions/song');
 var SongStore = Reflux.createStore({
   listenables: SongActions,
 
+  getInitialState: function() {
+    return '';
+  },
+
   onLoad: function(artist, name) {
 
     var handleData = function(data, textStatus, jqXHR) {
@@ -27,6 +31,10 @@ var SongStore = Reflux.createStore({
 
     var url = '/api/getSong/' + artist + '/' + name;
     $.get(url, _.bind(handleData, this), 'json');
+  },
+
+  onSetSource: function(value) {
+    this.trigger(value);
   }
 
 });

@@ -137,22 +137,3 @@ function changeViewMode(num) {
       $('.verse-chords, .verse-lyrics').fadeIn(FADE_TIME);
   }
 }
-
-function changeTheme(url) {
-
-  // Make sure the value stored in localStorage actually is a theme we can use.
-  var el = $('option', '#themeSelector').filter(function() {
-    return $(this).val() === url;
-  })[0];
-
-  if (!el) {
-    return;
-  }
-
-  // Set it as the selected value and load the theme's CSS.
-  $(el).attr('selected', true);
-  $('#themeCssElement').attr('href', url);
-
-  // Store for next time.
-  localStorage.lastUsedTheme = url;
-}

@@ -17,12 +17,6 @@ var Song = React.createClass({
     Reflux.connect(SongStore, 'source')
   ],
 
-  getInitialState: function() {
-    return {
-      source: ''
-    };
-  },
-
   componentDidMount: function() {
     SongActions.load(this.props.params.artist, this.props.params.name);
   },

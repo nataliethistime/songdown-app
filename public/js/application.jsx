@@ -2,12 +2,14 @@
 
 var React = require('react');
 
+require('babel/polyfill');
+
 var ReactRouter = require('react-router');
 var RouteHandler = ReactRouter.RouteHandler;
 var Route = ReactRouter.Route;
 
+var Edit = require('js/components/edit');
 var Index = require('js/components/index');
-
 var Song = require('js/components/song');
 
 
@@ -36,6 +38,11 @@ var App = React.createClass({
 var routes = (
   <Route handler={App}>
     <Route name="index" path="/" handler={Index} />
+
+    <Route name="edit" path="/edit" handler={Edit}>
+      <Route path="/edit/:artist/:name" handler={Edit} />
+    </Route>
+
     <Route name="song" path="/song/:artist/:name" handler={Song} />
   </Route>
 );

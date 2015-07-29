@@ -128,12 +128,6 @@ var Collection = React.createClass({
     Reflux.connect(CollectionStore, 'data')
   ],
 
-  getInitialState: function() {
-    return {
-      data: {}
-    };
-  },
-
   componentDidMount: function() {
     CollectionActions.load();
   },
