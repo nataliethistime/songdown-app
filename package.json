@@ -3,7 +3,7 @@
   "version": "0.1.6",
   "private": true,
   "dependencies": {
-    "babel": "^5.8.12",
+    "babel": "5.8.12",
     "bootable": "0.2.x",
     "bootable-environment": "0.2.x",
     "browserify": "10.2.4",
@@ -27,7 +27,7 @@
     "react": "0.13.3",
     "react-github-fork-ribbon": "0.4.1",
     "react-router": "0.13.3",
-    "react-textarea-autosize": "^2.4.2",
+    "react-textarea-autosize": "2.4.2",
     "reactify": "1.1.1",
     "reflux": "0.2.8",
     "songdown-compiler": "0.3.8",

@@ -14,7 +14,7 @@ var Box = require('js/components/box');
 var Song = React.createClass({
 
   mixins: [
-    Reflux.connect(SongStore, 'source')
+    Reflux.connect(SongStore, 'song')
   ],
 
   componentDidMount: function() {
@@ -24,7 +24,8 @@ var Song = React.createClass({
   render: function() {
     return (
       <Box transparent={false}>
-        <Compiler source={this.state.source} theme='default' />
+        <h1 style={{textAlign: 'center'}}>{this.state.song.artist} - {this.state.song.name}</h1>
+        <Compiler source={this.state.song.source} theme="default" />
       </Box>
     );
   }

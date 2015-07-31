@@ -4,37 +4,41 @@ var Reflux = require('reflux');
 var _ = require('lodash');
 var $ = require('jquery');
 
+var getData = require('js/data');
+
 var SongActions = require('js/actions/song');
 
 var SongStore = Reflux.createStore({
   listenables: SongActions,
 
   getInitialState: function() {
-    return '';
+    return {
+      artist: '',
+      name: '',
+      source: ''
+    };
+  },
+
+  init: function() {
+    this.data = this.getInitialState();
+  },
+
+  shouldComponentUpdate: function(nextProps, nextState) {
+    return this.props.song.source !== nextProps.song.source;
   },
 
   onLoad: function(artist, name) {
-
-    var handleData = function(data, textStatus, jqXHR) {
-      if (textStatus === 'success') {
-        console.log('Received song:', data);
-        this.trigger(data.source);
-      } else {
-        // TODO: Show a proper error to the user.
-        alert('Error getting song! :(');
-        console.error('Error getting song.');
-        console.error(data);
-        console.error(textStatus);
-        console.error(jqXHR);
+    getData(function(data) {
+      if (data && data[artist] && data[artist][name]) {
+        this.data = data[artist][name];
+        this.trigger(data[artist][name]);
       }
-    };
-
-    var url = '/api/getSong/' + artist + '/' + name;
-    $.get(url, _.bind(handleData, this), 'json');
+    }, this);
   },
 
   onSetSource: function(value) {
-    this.trigger(value);
+    this.data.source = value;
+    this.trigger(this.data);
   }
 
 });

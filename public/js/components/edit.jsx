@@ -1,8 +1,8 @@
 'use strict';
 
 var React = require('react');
-var PureRenderMixin = require('react/addons').addons.PureRenderMixin;
 var Reflux = require('reflux');
+var _ = require('lodash');
 
 var TextareaAutoSize = require('react-textarea-autosize');
 
@@ -17,8 +17,7 @@ var Box = require('js/components/box');
 var Song = React.createClass({
 
   mixins: [
-    Reflux.connect(SongStore, 'source'),
-    PureRenderMixin
+    Reflux.connect(SongStore, 'song')
   ],
 
   componentDidMount: function() {
@@ -28,8 +27,10 @@ var Song = React.createClass({
   },
 
   handleChange: function(event) {
+    var obj = _.clone(this.state.song);
+    obj.source = event.target.value;
     this.setState({
-      source: event.target.value
+      song: obj
     });
     SongActions.setSource(event.target.value);
   },
@@ -43,7 +44,7 @@ var Song = React.createClass({
         }}>
           <em>Enter Songdown</em>
           <TextareaAutoSize
-            value={this.state.source}
+            value={this.state.song.source}
             rows={4}
             useCacheForDOMMeasurements={true}
             onChange={this.handleChange}
@@ -60,7 +61,7 @@ var Song = React.createClass({
           float: 'right'
         }}>
           <em>Preview</em>
-          <Compiler source={this.state.source} theme='default' />
+          <Compiler source={this.state.song.source} theme='default' />
         </div>
       </div>
     );
