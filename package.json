@@ -10,7 +10,6 @@
     "connect-assets": "4.7.1",
     "connect-powered-by": "0.1.x",
     "express": "3.x.x",
-    "gulp": "3.9.0",
     "hbs": "3.1.0",
     "jquery": "2.1.x",
     "locomotive": "0.4.x",
@@ -23,6 +22,7 @@
     "reflux": "0.2.8",
     "songdown-compiler": "0.3.8",
     "songdown-transpose": "0.2.0",
+    "vinyl-fs": "1.0.0",
     "vinyl-source-stream": "1.1.0"
   },
   "scripts": {

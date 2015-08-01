@@ -1,12 +1,17 @@
 'use strict';
 
-var exec = require('child_process').exec;
+var path = require('path');
 
-var locomotive = require('locomotive');
 var bootable = require('bootable');
+var browserify = require('browserify');
 var environment = require('bootable-environment');
+var locomotive = require('locomotive');
+var reactify = require('reactify');
+var source = require('vinyl-source-stream');
+var vfs = require('vinyl-fs');
 
 var startServer = function() {
+
   // Create a new application and initialize it with *required* support for
   // controllers and views.  Move (or remove) these lines at your own peril.
   var app = new locomotive.Application();
@@ -32,12 +37,23 @@ var startServer = function() {
       return process.exit(-1);
     }
   });
+
 };
 
-exec('gulp browserify', function(err) {
-  if (err) {
-    throw err;
-  }
-
-  startServer();
+var b = browserify([path.join(__dirname, 'public/js/application.jsx')], {
+  extensions: [
+    // Include React files in the bundle.
+    '.jsx'
+  ],
+  paths: [
+    path.join(__dirname, 'public')
+  ]
 });
+
+b.transform(reactify);
+b.on('bundle', startServer);
+
+b
+  .bundle()
+  .pipe(source('build.js'))
+  .pipe(vfs.dest(path.join(__dirname, 'public/build/js')));
