@@ -61,7 +61,7 @@ var Song = React.createClass({
           float: 'right'
         }}>
           <em>Preview</em>
-          <Compiler source={this.state.song.source} theme='default' />
+          <Compiler source={this.state.song.source} theme="default" />
         </div>
       </div>
     );

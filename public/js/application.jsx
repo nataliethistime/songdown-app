@@ -9,9 +9,9 @@ var RouteHandler = ReactRouter.RouteHandler;
 var Route = ReactRouter.Route;
 
 var Edit = require('js/components/edit');
+var Header = require('js/components/header');
 var Index = require('js/components/index');
 var Song = require('js/components/song');
-
 
 var App = React.createClass({
   render: function() {
@@ -19,7 +19,7 @@ var App = React.createClass({
       <div style={{
         fontFamily: '"Segoe UI", "Arial"',
         fontSize: '16px',
-        backgroundColor: 'rgb(109, 196, 77)',
+        backgroundColor: 'rgb(129, 131, 133)',
         width: '100%',
         height: '100%',
         position: 'fixed',
@@ -28,6 +28,7 @@ var App = React.createClass({
         overflow: 'auto'
       }}>
 
+        <Header />
         <RouteHandler />
 
       </div>
@@ -39,8 +40,8 @@ var routes = (
   <Route handler={App}>
     <Route name="index" path="/" handler={Index} />
 
-    <Route name="edit" path="/edit" handler={Edit}>
-      <Route path="/edit/:artist/:name" handler={Edit} />
+    <Route name="editor" path="/edit" handler={Edit}>
+      <Route name="editSong" path="/edit/:artist/:name" handler={Edit} />
     </Route>
 
     <Route name="song" path="/song/:artist/:name" handler={Song} />

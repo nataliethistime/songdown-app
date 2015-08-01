@@ -22,10 +22,6 @@ var SongStore = Reflux.createStore({
     this.data = this.getInitialState();
   },
 
-  shouldComponentUpdate: function(nextProps, nextState) {
-    return this.props.song.source !== nextProps.song.source;
-  },
-
   onLoad: function(artist, name) {
     getData(function(data) {
       if (data && data[artist] && data[artist][name]) {
@@ -37,6 +33,11 @@ var SongStore = Reflux.createStore({
 
   onSetSource: function(value) {
     this.data.source = value;
+    this.trigger(this.data);
+  },
+
+  onClear: function() {
+    this.data = this.getInitialState();
     this.trigger(this.data);
   }
 

@@ -4,6 +4,7 @@ var Reflux = require('reflux');
 
 var SongActions = Reflux.createActions([
   'load',
+  'clear',
   'setSource'
 ]);
 

@@ -21,6 +21,10 @@ var Song = React.createClass({
     SongActions.load(this.props.params.artist, this.props.params.name);
   },
 
+  shouldComponentUpdate: function(nextProps, nextState) {
+    return this.state.song.source !== nextState.song.source;
+  },
+
   render: function() {
     return (
       <Box transparent={false}>

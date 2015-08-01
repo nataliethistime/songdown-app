@@ -125,7 +125,7 @@ var Artist = React.createClass({
 
 var Collection = React.createClass({
   mixins: [
-    Reflux.connect(CollectionStore, 'data')
+    Reflux.connect(CollectionStore, 'collection')
   ],
 
   componentDidMount: function() {
@@ -135,7 +135,7 @@ var Collection = React.createClass({
   render: function() {
     var arr = [];
 
-    _.each(this.state.data, function(songs, name) {
+    _.each(this.state.collection, function(songs, name) {
       arr.push(
         <Artist key={name} name={name} songs={songs} />
       );
