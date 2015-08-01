@@ -1,7 +1,6 @@
 'use strict';
 
 var Reflux = require('reflux');
-var $ = require('jquery');
 var _ = require('lodash');
 
 var getData = require('js/data');
