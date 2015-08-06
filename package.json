@@ -1,22 +1,21 @@
 {
   "name": "songdown-app",
-  "version": "0.1.6",
+  "version": "0.1.5",
   "private": true,
   "dependencies": {
     "babelify": "6.1.3",
     "browserify": "11.0.1",
-    "jquery": "2.1.4",
+    "express-spa-router": "0.0.8",
     "lodash": "3.9.3",
     "react": "0.13.3",
     "react-router": "0.13.3",
     "react-textarea-autosize": "2.4.2",
-    "reactify": "1.1.1",
     "reflux": "0.2.8",
     "songdown-compiler": "0.3.8",
     "songdown-transpose": "0.2.0"
   },
   "scripts": {
-    "build": "browserify --noparse jquery --extension .jsx -o public/app.js ./app/index",
+    "build": "browserify --extension .jsx -o public/app.js ./app/index",
     "start": "npm run build && node server.js"
   },
   "browserify": {

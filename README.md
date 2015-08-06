@@ -9,6 +9,8 @@ This is the web application component of the Songdown project.
 
 ### 0.2.0
 - Implemented new front-end using React.
+- Removed the old Locomotive server that wasn't very good, really.
+- Removed jQuery because it's massive and not needed anymore.
 
 ### 0.1.5 (2015-02-14)
 - Implemented printing from the "edit song" page.

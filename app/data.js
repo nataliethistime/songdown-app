@@ -3,7 +3,6 @@
 // This web app uses one json file to function. This module is responsible for getting and storing
 // that data and sending it through whenever it's needed.
 
-var $ = require('jquery');
 var _ = require('lodash');
 
 // This URL may change. In which case, we're stuffed.
@@ -25,21 +24,17 @@ var getData = function(cb, scope) {
     handleCallback(cb, data, scope);
   }
 
-  var handleData = function(data, textStatus, jqXHR) {
-    if (textStatus === 'success') {
-      console.log('Received data:', data);
-      handleCallback(cb, data, scope);
-    } else {
-      // TODO: Show a proper error to the user.
-      alert('Error getting data');
-      console.error('Error getting data.');
-      console.error(data);
-      console.error(textStatus);
-      console.error(jqXHR);
+  var httpRequest = typeof XMLHttpRequest !== 'undefined' ? new XMLHttpRequest()
+    : new window.ActiveXObject('Microsoft.XMLHTTP');
+
+  httpRequest.onreadystatechange = function() {
+    if (httpRequest.readyState === 4 && httpRequest.status === 200) {
+      handleCallback(cb, JSON.parse(httpRequest.responseText), scope);
     }
   };
 
-  $.get(JSON_URL, _.bind(handleData, this), 'json');
+  httpRequest.open('GET', JSON_URL, true);
+  httpRequest.send();
 };
 
 module.exports = getData;
