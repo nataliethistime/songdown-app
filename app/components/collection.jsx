@@ -7,9 +7,9 @@ var _ = require('lodash');
 var ReactRouter = require('react-router');
 var Link = ReactRouter.Link;
 
-var CollectionActions = require('js/actions/collection');
+var CollectionActions = require('./../actions/collection');
 
-var CollectionStore = require('js/stores/collection');
+var CollectionStore = require('./../stores/collection');
 
 var Song = React.createClass({
   propTypes: {

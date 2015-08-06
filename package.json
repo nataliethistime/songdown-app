@@ -3,16 +3,9 @@
   "version": "0.1.6",
   "private": true,
   "dependencies": {
-    "babel": "5.8.12",
-    "bootable": "0.2.x",
-    "bootable-environment": "0.2.x",
-    "browserify": "10.2.4",
-    "connect-assets": "4.7.1",
-    "connect-powered-by": "0.1.x",
-    "express": "3.x.x",
-    "hbs": "3.1.0",
-    "jquery": "2.1.x",
-    "locomotive": "0.4.x",
+    "babelify": "6.1.3",
+    "browserify": "11.0.1",
+    "jquery": "2.1.4",
     "lodash": "3.9.3",
     "react": "0.13.3",
     "react-router": "0.13.3",
@@ -20,11 +13,15 @@
     "reactify": "1.1.1",
     "reflux": "0.2.8",
     "songdown-compiler": "0.3.8",
-    "songdown-transpose": "0.2.0",
-    "vinyl-fs": "1.0.0",
-    "vinyl-source-stream": "1.1.0"
+    "songdown-transpose": "0.2.0"
   },
   "scripts": {
-    "start": "node server.js"
+    "build": "browserify --noparse jquery --extension .jsx -o public/app.js ./app/index",
+    "start": "npm run build && node server.js"
+  },
+  "browserify": {
+    "transform": [
+      "babelify"
+    ]
   }
 }

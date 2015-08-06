@@ -6,7 +6,7 @@ var ReactRouter = require('react-router');
 var Link = ReactRouter.Link;
 var _ = require('lodash');
 
-var SongStore = require('js/stores/song');
+var SongStore = require('./../stores/song');
 
 var HeaderLink = React.createClass({
 

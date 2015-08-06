@@ -3,9 +3,9 @@
 var Reflux = require('reflux');
 var _ = require('lodash');
 
-var getData = require('js/data');
+var getData = require('./../data');
 
-var SongActions = require('js/actions/song');
+var SongActions = require('./../actions/song');
 
 var SongStore = Reflux.createStore({
   listenables: SongActions,

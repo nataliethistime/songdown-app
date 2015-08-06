@@ -14,7 +14,7 @@ var data;
 var handleCallback = function(cb, data, scope) {
   data = data;
   cb.call(scope, data);
-}
+};
 
 var getData = function(cb, scope) {
 

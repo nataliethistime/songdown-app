@@ -6,13 +6,13 @@ var _ = require('lodash');
 
 var TextareaAutoSize = require('react-textarea-autosize');
 
-var SongActions = require('js/actions/song');
+var SongActions = require('./../actions/song');
 
-var SongStore = require('js/stores/song');
+var SongStore = require('./../stores/song');
 
 var Compiler = require('songdown-compiler');
 
-var Box = require('js/components/box');
+var Box = require('./box');
 
 var Song = React.createClass({
 

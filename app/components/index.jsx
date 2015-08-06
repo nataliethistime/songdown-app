@@ -2,10 +2,10 @@
 
 var React = require('react');
 
-var SongActions = require('js/actions/song');
+var SongActions = require('./../actions/song');
 
-var Box = require('js/components/box');
-var Collection = require('js/components/collection');
+var Box = require('./box');
+var Collection = require('./collection');
 
 var Index = React.createClass({
 

@@ -8,10 +8,10 @@ var ReactRouter = require('react-router');
 var RouteHandler = ReactRouter.RouteHandler;
 var Route = ReactRouter.Route;
 
-var Edit = require('js/components/edit');
-var Header = require('js/components/header');
-var Index = require('js/components/index');
-var Song = require('js/components/song');
+var Edit = require('./components/edit');
+var Header = require('./components/header');
+var Index = require('./components/index');
+var Song = require('./components/song');
 
 var App = React.createClass({
   render: function() {
