@@ -8,8 +8,34 @@ var app = express();
 
 var router = require('express-spa-router');
 
+
+/*
+ * =============
+ * CONFIGURATION
+ * =============
+ */
+
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
+
+
+
+/*
+ * ==========
+ * MIDDLEWARE
+ * ==========
+ */
+
+// Do this to make sure we're always using https. This is so that we avoid issues with protocols.
+if (process.env.NODE_ENV === 'production') {
+  app.use(function(req, res, next) {
+    if (req.protocol !== 'https') {
+      res.redirect('https://' + req.get('host') + req.url);
+    } else {
+      next();
+    }
+  });
+}
 
 app.use(router(app, {
   extraRoutes: [
@@ -19,6 +45,14 @@ app.use(router(app, {
 }));
 
 app.use('/static', express.static('public'));
+
+
+
+/*
+ * ======
+ * ROUTES
+ * ======
+ */
 
 app.get('/', function(req, res) {
 
@@ -35,6 +69,14 @@ app.get('/', function(req, res) {
 
   res.render('index', partials);
 });
+
+
+
+/*
+ * =========
+ * LISTENING
+ * =========
+ */
 
 var port = process.env.PORT || 5000;
 app.listen(port, function() {
