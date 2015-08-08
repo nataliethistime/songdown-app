@@ -1,6 +1,7 @@
 'use strict';
 
 var React = require('react');
+var Radium = require('radium');
 
 require('babel/polyfill');
 
@@ -13,20 +14,12 @@ var Header = require('./components/header');
 var Index = require('./components/index');
 var Song = require('./components/song');
 
-var App = React.createClass({
+var styles = require('./styles');
+
+var App = Radium(React.createClass({
   render: function() {
     return (
-      <div style={{
-        fontFamily: '"Segoe UI", "Arial"',
-        fontSize: '16px',
-        backgroundColor: 'rgb(129, 131, 133)',
-        width: '100%',
-        height: '100%',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        overflow: 'auto'
-      }}>
+      <div style={styles.app}>
 
         <Header />
         <RouteHandler />
@@ -34,7 +27,7 @@ var App = React.createClass({
       </div>
     );
   }
-});
+}));
 
 var routes = (
   <Route handler={App}>

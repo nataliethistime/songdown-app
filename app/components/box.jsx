@@ -1,6 +1,9 @@
 'use strict';
 
 var React = require('react');
+var Radium = require('radium');
+
+var styles = require('./../styles');
 
 var Box = React.createClass({
 
@@ -15,23 +18,12 @@ var Box = React.createClass({
   },
 
   render: function() {
-    var style = {
-      display: 'block',
-      background: this.props.transparent ? 'rgba(255, 255, 255, 0.6)' : '#ffffff',
-      padding: '20px',
-      borderRadius: '3px',
-      boxShadow: '1px 1px 4px rgba(0, 0, 0, 0.4)',
-
-      width: '75%',
-      margin: '40px auto'
-    };
-
     return (
-      <div style={style}>
+      <div style={[styles.box.base, this.props.transparent && styles.box.transparent]}>
         {this.props.children}
       </div>
     );
   }
 });
 
-module.exports = Box;
+module.exports = Radium(Box);

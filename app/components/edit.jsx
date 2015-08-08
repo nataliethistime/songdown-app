@@ -12,8 +12,6 @@ var SongStore = require('./../stores/song');
 
 var Compiler = require('songdown-compiler');
 
-var Box = require('./box');
-
 var Song = React.createClass({
 
   mixins: [

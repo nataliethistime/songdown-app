@@ -3,39 +3,26 @@
 var React = require('react');
 var Reflux = require('reflux');
 
+var TransposeActions = require('./../actions/transpose');
 var SongActions = require('./../actions/song');
 
+var TransposeStore = require('./../stores/transpose');
 var SongStore = require('./../stores/song');
 
 var Compiler = require('songdown-compiler');
 
 var Box = require('./box');
+var Toolbox = require('./toolbox');
 
 var Song = React.createClass({
 
   mixins: [
-    Reflux.connect(SongStore, 'song')
+    Reflux.connect(SongStore, 'song'),
+    Reflux.connect(TransposeStore, 'transpose')
   ],
 
-  getInitialState: function() {
-    return {
-      transpose: 0
-    };
-  },
-
-  transposeUp: function() {
-    this.setState({
-      transpose: this.state.transpose + 1
-    });
-  },
-
-  transposeDown: function() {
-    this.setState({
-      transpose: this.state.transpose - 1
-    });
-  },
-
   componentDidMount: function() {
+    TransposeActions.reset();
     SongActions.load(this.props.params.artist, this.props.params.name);
   },
 
@@ -46,18 +33,7 @@ var Song = React.createClass({
           {this.state.song.artist} - {this.state.song.name}
         </h1>
 
-        <div style={{
-          top: 0,
-          right: 0,
-          float: 'right',
-
-          padding: 5,
-          border: '1px solid #000000',
-          borderRadius: 6
-        }}>
-          Transpose: <button type="button" onClick={this.transposeUp}>+</button>
-          <button type="button" onClick={this.transposeDown}>-</button>
-        </div>
+        <Toolbox />
 
         <Compiler
           source={this.state.song.source}
