@@ -11,6 +11,7 @@ This is the web application component of the Songdown project.
 - Implemented new front-end using React.
 - Removed the old Locomotive server that wasn't very good, really.
 - Removed jQuery because it's massive and not needed anymore.
+- **MASSIVE** improvements to the start-up time of the app.
 
 ### 0.1.5 (2015-02-14)
 - Implemented printing from the "edit song" page.
@@ -57,29 +58,29 @@ This is the web application component of the Songdown project.
 
 The following is the changes log form the old version of the Songdown web application before the change to Locomotive.js, which was when I restructured the entire application and started the version number afresh.
 
-### v1.2.1
+### 1.2.1
 - Fixed errors when a song didn't exist.
 - Remove some useless stuff.
 - Fixed up some bad code. :D
 
-### v1.2.0 (2014/11/20)
+### 1.2.0 (2014/11/20)
 - Implemented using of a local version of songdown-songs if available. Essentially allowing off-line editing of songdown files which can then be pushed to Github when ready.
 - Fixed a bug where a split chord would cause transposing to fail.
 - Fixed a bug where verses were split across pages when printing.
 - More cleaning of HTML so that debugging is easier.
 - Created quick launch script.
 
-### v1.1.0 (2014/11/11)
+### 1.1.0 (2014/11/11)
 - Implemented the transpose feature.
 - Started updating the version number in the package file (oops!).
 
-### v1.0.1 (2014/11/01)
+### 1.0.1 (2014/11/01)
 - Adjusted the way the front-end site loads needed files.
 - Force the site to use SSL in production mode.
 - Massive changes to the internal setup of the site.
 - Added placeholder for the transpose feature.
 
-### v1.0.0 (2014/10/25)
+### 1.0.0 (2014/10/25)
 - Initial version
 
 # License
