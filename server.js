@@ -29,8 +29,8 @@ app.set('view engine', 'hbs');
 // Do this to make sure we're always using https. This is so that we avoid issues with protocols.
 if (process.env.NODE_ENV === 'production') {
   app.use(function(req, res, next) {
-    if (req.headers['x-forwarded-proto'] !== 'https') {
-      res.redirect('https://' + req.get('host') + req.url);
+    if (req.headers['X-Forwarded-Proto'] === 'https') {
+      res.redirect('https://' + req.headers.host + req.url);
     } else {
       next();
     }
