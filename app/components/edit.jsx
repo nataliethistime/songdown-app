@@ -35,6 +35,10 @@ var Song = React.createClass({
     SongActions.setSource(event.target.value);
   },
 
+  shouldComponentUpdate: function(nextProps, nextState) {
+    return this.state.song.source !== nextState.song.source;
+  },
+
   render: function() {
     return (
       <div>
