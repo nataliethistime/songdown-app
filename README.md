@@ -12,6 +12,7 @@ This is the web application component of the Songdown project.
 - Removed the old Locomotive server that wasn't very good, really.
 - Removed jQuery because it's massive and not needed anymore.
 - **MASSIVE** improvements to the start-up time of the app.
+- Force HTTPS in the entire app. I'm so confused by the rules if the different protocols, we just need to stick to one, I think.
 
 ### 0.1.5 (2015-02-14)
 - Implemented printing from the "edit song" page.

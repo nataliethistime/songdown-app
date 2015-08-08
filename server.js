@@ -56,8 +56,8 @@ app.use('/static', express.static('public'));
 
 app.get('/', function(req, res) {
 
-  var protocol = req.protocol;
-  var base = protocol + '://' + req.get('host') + '/';
+  var protocol = process.env.NODE_ENV === 'production' ? 'https://' : 'http://';
+  var base = protocol + req.get('host') + '/';
   var jsonFile = path.join(__dirname, 'public/songs.json');
 
   var partials = {
