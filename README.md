@@ -8,7 +8,7 @@ This is the web application component of the Songdown project.
 # Changes
 
 ### 0.2.0
-- Implemented new front-end using React.
+- Implemented new front-end using React. :+1:
 - Removed the old Locomotive server that wasn't very good, really.
 - Removed jQuery because it's massive and not needed anymore.
 - **MASSIVE** improvements to the start-up time of the app.

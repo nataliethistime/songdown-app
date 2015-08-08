@@ -5,9 +5,6 @@
 
 var _ = require('lodash');
 
-// This URL may change. In which case, we're stuffed.
-var JSON_URL = 'https://raw.githubusercontent.com/1vasari/songdown-songs/master/songs.json';
-
 var data;
 
 var handleCallback = function(cb, data, scope) {
@@ -33,7 +30,7 @@ var getData = function(cb, scope) {
     }
   };
 
-  httpRequest.open('GET', JSON_URL, true);
+  httpRequest.open('GET', window.SONGDOWN_JSON_URL, true);
   httpRequest.send();
 };
 
