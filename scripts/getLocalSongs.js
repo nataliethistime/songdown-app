@@ -10,13 +10,16 @@ var fs = require('fs');
 
 var copyFile = require('quickly-copy-file');
 
-var songsLocation = path.join(__dirname, '../../songdown-songs/songs.json');
+var songdownSongsLocation = path.join(__dirname, '../../songdown-songs');
 var to = path.join(__dirname, '../public/songs.json');
 
-if (fs.existsSync(songsLocation)) {
-  console.log('Using a local songs.json instead of downloading from Github.');
+if (fs.existsSync(songdownSongsLocation)) {
+  console.log('Generating and using a local songs.json instead of downloading from Github.');
 
-  copyFile(songsLocation, to, function(err) {
+  // Before copying the songs.json, generate a new one.
+  require(path.join(songdownSongsLocation, 'packager'));
+
+  copyFile(path.join(songdownSongsLocation, 'songs.json'), to, function(err) {
     if (err) {
       throw err;
     }
