@@ -8,3 +8,4 @@ module.exports.headerLink = require('./headerLink');
 module.exports.songList = require('./songList');
 module.exports.songListItem = require('./songListItem');
 module.exports.toolbox = require('./toolbox');
+module.exports.youtube = require('./youtube');

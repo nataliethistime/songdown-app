@@ -13,6 +13,7 @@
     "react": "0.13.3",
     "react-router": "0.13.3",
     "react-textarea-autosize": "2.5.0",
+    "react-youtube": "4.0.0",
     "reflux": "0.2.11",
     "songdown-compiler": "0.4.0"
   },

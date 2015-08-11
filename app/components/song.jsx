@@ -13,6 +13,7 @@ var Compiler = require('songdown-compiler');
 
 var Box = require('./box');
 var Toolbox = require('./toolbox');
+var Youtube = require('./youtube');
 
 var Song = React.createClass({
 
@@ -34,6 +35,8 @@ var Song = React.createClass({
         </h1>
 
         <Toolbox />
+
+        <Youtube url={this.state.song.youtube} />
 
         <Compiler
           source={this.state.song.source}

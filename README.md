@@ -12,9 +12,10 @@ This is the web application component of the Songdown project.
 - Removed the old Locomotive server that wasn't very good, really.
 - Removed jQuery because it's massive and not needed anymore.
 - **MASSIVE** improvements to the start-up time of the app.
-- Force HTTPS in the entire app. I'm so confused by the rules if the different protocols, we just need to stick to one, I think.
+- Force HTTPS in the entire app.
 - Fixed up printing with the new React UI.
 - Separated out the CSS and all React components into different files and tidied up.
+- Implemented a `youtube` front matter option for songs. If a song has one, the video is shown inline with the song.
 
 ### 0.1.5 (2015-02-14)
 - Implemented printing from the "edit song" page.
