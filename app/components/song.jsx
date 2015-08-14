@@ -12,6 +12,7 @@ var SongStore = require('./../stores/song');
 var Compiler = require('songdown-compiler');
 
 var Box = require('./box');
+var Key = require('./key');
 var Toolbox = require('./toolbox');
 var Youtube = require('./youtube');
 
@@ -37,6 +38,8 @@ var Song = React.createClass({
         <Toolbox />
 
         <Youtube url={this.state.song.youtube} />
+
+        <Key songKey={this.state.song.key} transpose={this.state.transpose} />
 
         <Compiler
           source={this.state.song.source}
