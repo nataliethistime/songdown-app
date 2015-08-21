@@ -7,7 +7,7 @@ This is the web application component of the Songdown project.
 
 # Changes
 
-### 1.0.0
+### 1.0.0 (2015-08-21)
 - **MASSIVE** improvements to the start-up time of the app.
 - Force HTTPS in the entire app.
 - Implemented a `youtube` front matter option for including a video inline with a song.
