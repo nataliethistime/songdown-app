@@ -16,7 +16,7 @@
     "react-textarea-autosize": "2.5.0",
     "react-youtube": "4.0.0",
     "reflux": "0.2.11",
-    "songdown-compiler": "0.4.0",
+    "songdown-compiler": "0.5.0",
     "songdown-transpose": "0.3.0"
   },
   "scripts": {

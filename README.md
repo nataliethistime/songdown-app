@@ -18,6 +18,7 @@ This is the web application component of the Songdown project.
 - Implemented a `youtube` front matter option for songs. If a song has one, the video is shown inline with the song.
 - Implemented a toolbox option to hide the Youtube video.
 - Implemented displaying the key of the current song.
+- Implemented increasing and decreasing of font size in the song view.
 
 ### 0.1.5 (2015-02-14)
 - Implemented printing from the "edit song" page.

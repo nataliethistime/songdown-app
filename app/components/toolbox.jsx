@@ -4,8 +4,9 @@ var React = require('react');
 var Reflux = require('reflux');
 var Radium = require('radium');
 
-var VideoActions = require('./../actions/video');
+var FontSizeActions = require('./../actions/fontSize');
 var TransposeActions = require('./../actions/transpose');
+var VideoActions = require('./../actions/video');
 
 var VideoStore = require('./../stores/video');
 
@@ -28,6 +29,9 @@ var Toolbox = React.createClass({
         <p>
           Transpose <button type="button" onClick={TransposeActions.transposeUp}>+</button>
           <button type="button" onClick={TransposeActions.transposeDown}>-</button>
+          <br />
+          Font Size <button type="button" onClick={FontSizeActions.increase}>+</button>
+          <button type="button" onClick={FontSizeActions.decrease}>-</button>
         </p>
 
         <p>
