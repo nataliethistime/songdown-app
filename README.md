@@ -7,22 +7,19 @@ This is the web application component of the Songdown project.
 
 # Changes
 
-### 0.2.0
-- Implemented new front-end using React. :+1:
-- Removed the old Locomotive server that wasn't very good, really.
-- Removed jQuery because it's massive and not needed anymore.
+### 1.0.0
 - **MASSIVE** improvements to the start-up time of the app.
 - Force HTTPS in the entire app.
-- Fixed up printing with the new React UI.
-- Separated out the CSS and all React components into different files and tidied up.
-- Implemented a `youtube` front matter option for songs. If a song has one, the video is shown inline with the song.
-- Implemented a toolbox option to hide the Youtube video.
+- Implemented a `youtube` front matter option for including a video inline with a song.
 - Implemented displaying the key of the current song.
 - Implemented increasing and decreasing of font size in the song view.
-- Implemented showing/hiding of chords, comments and GOTOs in the song view.
+- Implemented new front-end using React. :+1:
 - Implemented printing of a song. (Only works on Chrome)
 - Implemented setting the title of document to the currently selected song.
-- Fixed link weirdness.
+- Implemented showing/hiding of chords, comments and GOTOs and YouTube video in the song view.
+- Removed jQuery.
+- Removed Locomotive.
+- Refactored *everything*.
 
 ### 0.1.5 (2015-02-14)
 - Implemented printing from the "edit song" page.
