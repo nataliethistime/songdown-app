@@ -16,6 +16,7 @@ var Collection = React.createClass({
   ],
 
   componentDidMount: function() {
+    document.title = 'Songdown Collection';
     CollectionActions.load();
   },
 

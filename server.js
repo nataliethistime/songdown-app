@@ -8,7 +8,6 @@ var app = express();
 
 var router = require('express-spa-router');
 
-
 /*
  * =============
  * CONFIGURATION
@@ -17,8 +16,6 @@ var router = require('express-spa-router');
 
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
-
-
 
 /*
  * ==========
