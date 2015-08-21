@@ -1,6 +1,6 @@
 {
   "name": "songdown-app",
-  "version": "0.1.5",
+  "version": "1.0.0",
   "private": true,
   "dependencies": {
     "babel": "5.8.21",
