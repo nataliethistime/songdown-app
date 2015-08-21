@@ -6,8 +6,9 @@ var Radium = require('radium');
 var _ = require('lodash');
 
 var FontSizeActions = require('./../actions/fontSize');
-var TransposeActions = require('./../actions/transpose');
+var ThemeActions = require('./../actions/theme');
 var ToolboxActions = require('./../actions/toolbox');
+var TransposeActions = require('./../actions/transpose');
 
 var ShowChordsStore = require('./../stores/showChords');
 var ShowCommentsStore = require('./../stores/showComments');
@@ -43,6 +44,10 @@ var Toolbox = React.createClass({
   toggleVideo: function(e) {
     e.preventDefault();
     ToolboxActions.toggleVideo();
+  },
+
+  handleThemeChange: function(e) {
+    ThemeActions.set(e.target.value);
   },
 
   print: function() {
@@ -105,6 +110,14 @@ var Toolbox = React.createClass({
             checked={this.state.showVideo}
             onChange={this.toggleVideo}
           ></input>
+        </p>
+
+        <p>
+          Theme:
+          <br />
+          <select onChange={this.handleThemeChange}>
+            <option value="default">Default</option>
+          </select>
         </p>
 
         <p>

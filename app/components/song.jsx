@@ -13,6 +13,7 @@ var TransposeStore = require('./../stores/transpose');
 var ShowChordsStore = require('./../stores/showChords');
 var ShowCommentsStore = require('./../stores/showComments');
 var ShowGOTOsStore = require('./../stores/showGOTOs');
+var ThemeStore = require('./../stores/theme');
 
 var Compiler = require('songdown-compiler');
 
@@ -29,7 +30,8 @@ var Song = React.createClass({
     Reflux.connect(FontSizeStore, 'fontSize'),
     Reflux.connect(ShowChordsStore, 'showChords'),
     Reflux.connect(ShowCommentsStore, 'showComments'),
-    Reflux.connect(ShowGOTOsStore, 'showGOTOs')
+    Reflux.connect(ShowGOTOsStore, 'showGOTOs'),
+    Reflux.connect(ThemeStore, 'theme')
   ],
 
   componentDidMount: function() {
@@ -55,7 +57,7 @@ var Song = React.createClass({
         <Compiler
           source={this.state.song.source}
           transpose={this.state.transpose}
-          theme="default"
+          theme={this.state.theme}
           fontSize={this.state.fontSize}
           showChords={this.state.showChords}
           showComments={this.state.showComments}

@@ -17,9 +17,10 @@ This is the web application component of the Songdown project.
 - Implemented printing of a song. (Only works on Chrome)
 - Implemented setting the title of document to the currently selected song.
 - Implemented showing/hiding of chords, comments and GOTOs and YouTube video in the song view.
+- Implemented theme selector.
+- Refactored *everything*.
 - Removed jQuery.
 - Removed Locomotive.
-- Refactored *everything*.
 
 ### 0.1.5 (2015-02-14)
 - Implemented printing from the "edit song" page.
