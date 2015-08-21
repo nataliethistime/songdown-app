@@ -20,6 +20,7 @@ This is the web application component of the Songdown project.
 - Implemented displaying the key of the current song.
 - Implemented increasing and decreasing of font size in the song view.
 - Implemented showing/hiding of chords, comments and GOTOs in the song view.
+- Implemented printing of a song. (Only works on Chrome)
 
 ### 0.1.5 (2015-02-14)
 - Implemented printing from the "edit song" page.

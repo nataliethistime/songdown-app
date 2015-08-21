@@ -3,6 +3,7 @@
 var React = require('react');
 var Reflux = require('reflux');
 var Radium = require('radium');
+var _ = require('lodash');
 
 var FontSizeActions = require('./../actions/fontSize');
 var TransposeActions = require('./../actions/transpose');
@@ -42,6 +43,25 @@ var Toolbox = React.createClass({
   toggleVideo: function(e) {
     e.preventDefault();
     ToolboxActions.toggleVideo();
+  },
+
+  print: function() {
+    var isChrome = navigator.userAgent.toLowerCase().indexOf('chrome') > -1;
+
+    if (isChrome) {
+      _.defer(window.print);
+    } else {
+      // This is caused by a limitation in Radium, see:
+      // https://github.com/FormidableLabs/radium/issues/132
+
+      var msg = [
+        'ATTENTION:',
+        'Due to an issue in your browser, printing will not work. :(',
+        'Please use Google Chrome for printing from this site.'
+      ];
+
+      alert(msg.join('\n'));
+    }
   },
 
   render: function() {
@@ -85,6 +105,10 @@ var Toolbox = React.createClass({
             checked={this.state.showVideo}
             onChange={this.toggleVideo}
           ></input>
+        </p>
+
+        <p>
+          <button type="button" onClick={this.print}>Print</button>
         </p>
       </div>
     );
