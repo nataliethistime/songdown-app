@@ -6,21 +6,42 @@ var Radium = require('radium');
 
 var FontSizeActions = require('./../actions/fontSize');
 var TransposeActions = require('./../actions/transpose');
-var VideoActions = require('./../actions/video');
+var ToolboxActions = require('./../actions/toolbox');
 
-var VideoStore = require('./../stores/video');
+var ShowChordsStore = require('./../stores/showChords');
+var ShowCommentsStore = require('./../stores/showComments');
+var ShowGOTOsStore = require('./../stores/showGOTOs');
+var ShowVideoStore = require('./../stores/showVideo');
 
 var styles = require('./../styles');
 
 var Toolbox = React.createClass({
 
   mixins: [
-    Reflux.connect(VideoStore, 'showVideo')
+    Reflux.connect(ShowChordsStore, 'showChords'),
+    Reflux.connect(ShowCommentsStore, 'showComments'),
+    Reflux.connect(ShowGOTOsStore, 'showGOTOs'),
+    Reflux.connect(ShowVideoStore, 'showVideo')
   ],
+
+  toggleChords: function(e) {
+    e.preventDefault();
+    ToolboxActions.toggleChords();
+  },
+
+  toggleComments: function(e) {
+    e.preventDefault();
+    ToolboxActions.toggleComments();
+  },
+
+  toggleGOTOs: function(e) {
+    e.preventDefault();
+    ToolboxActions.toggleGOTOs();
+  },
 
   toggleVideo: function(e) {
     e.preventDefault();
-    VideoActions.toggle();
+    ToolboxActions.toggleVideo();
   },
 
   render: function() {
@@ -35,15 +56,35 @@ var Toolbox = React.createClass({
         </p>
 
         <p>
+          Show Chords <input
+            type="checkbox"
+            checked={this.state.showChords}
+            onChange={this.toggleChords}
+          ></input>
+
+          <br />
+
+          Show Comments <input
+            type="checkbox"
+            checked={this.state.showComments}
+            onChange={this.toggleComments}
+          ></input>
+
+          <br />
+
+          Show GOTOs <input
+            type="checkbox"
+            checked={this.state.showGOTOs}
+            onChange={this.toggleGOTOs}
+          ></input>
+
+          <br />
+
           Show Video <input
             type="checkbox"
             checked={this.state.showVideo}
             onChange={this.toggleVideo}
           ></input>
-          <br />
-          Show Chords <input type="checkbox" disabled={true}></input>
-          <br />
-          Show GOTOs <input type="checkbox" disabled={true}></input>
         </p>
       </div>
     );

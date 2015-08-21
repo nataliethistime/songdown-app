@@ -4,7 +4,7 @@ var React = require('react');
 var Reflux = require('reflux');
 var Radium = require('radium');
 
-var VideoStore = require('./../stores/video');
+var ShowVideoStore = require('./../stores/showVideo');
 
 var YoutubeVideo = require('react-youtube');
 
@@ -13,7 +13,7 @@ var styles = require('./../styles');
 var Youtube = React.createClass({
 
   mixins: [
-    Reflux.connect(VideoStore, 'showVideo')
+    Reflux.connect(ShowVideoStore, 'showVideo')
   ],
 
   propTypes: {

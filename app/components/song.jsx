@@ -10,6 +10,9 @@ var SongActions = require('./../actions/song');
 var FontSizeStore = require('./../stores/fontSize');
 var SongStore = require('./../stores/song');
 var TransposeStore = require('./../stores/transpose');
+var ShowChordsStore = require('./../stores/showChords');
+var ShowCommentsStore = require('./../stores/showComments');
+var ShowGOTOsStore = require('./../stores/showGOTOs');
 
 var Compiler = require('songdown-compiler');
 
@@ -23,7 +26,10 @@ var Song = React.createClass({
   mixins: [
     Reflux.connect(SongStore, 'song'),
     Reflux.connect(TransposeStore, 'transpose'),
-    Reflux.connect(FontSizeStore, 'fontSize')
+    Reflux.connect(FontSizeStore, 'fontSize'),
+    Reflux.connect(ShowChordsStore, 'showChords'),
+    Reflux.connect(ShowCommentsStore, 'showComments'),
+    Reflux.connect(ShowGOTOsStore, 'showGOTOs')
   ],
 
   componentDidMount: function() {
@@ -50,6 +56,9 @@ var Song = React.createClass({
           transpose={this.state.transpose}
           theme="default"
           fontSize={this.state.fontSize}
+          showChords={this.state.showChords}
+          showComments={this.state.showComments}
+          showGOTOs={this.state.showGOTOs}
         />
       </Box>
     );
