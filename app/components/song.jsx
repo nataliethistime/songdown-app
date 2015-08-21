@@ -36,6 +36,7 @@ var Song = React.createClass({
     TransposeActions.reset();
     FontSizeActions.reset();
     SongActions.load(this.props.params.artist, this.props.params.name);
+    document.title = this.props.params.name;
   },
 
   render: function() {
