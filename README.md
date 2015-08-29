@@ -7,6 +7,9 @@ This is the web application component of the Songdown project.
 
 # Changes
 
+### 1.1.0
+- Big changes to the syntax.
+
 ### 1.0.0 (2015-08-21)
 - **MASSIVE** improvements to the start-up time of the app.
 - Force HTTPS in the entire app.
