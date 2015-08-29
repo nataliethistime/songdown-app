@@ -8,6 +8,7 @@ require('babel/polyfill');
 var ReactRouter = require('react-router');
 var RouteHandler = ReactRouter.RouteHandler;
 var Route = ReactRouter.Route;
+var DefaultRoute = ReactRouter.DefaultRoute;
 
 var Edit = require('./components/edit');
 var Header = require('./components/header');
@@ -31,7 +32,7 @@ var App = Radium(React.createClass({
 
 var routes = (
   <Route handler={App}>
-    <Route name="index" path="/" handler={Index} />
+    <DefaultRoute handler={Index} />
 
     <Route name="editor" path="/edit" handler={Edit}>
       <Route name="editSong" path="/edit/:artist/:name" handler={Edit} />
