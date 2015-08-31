@@ -8,6 +8,28 @@ var app = express();
 
 var router = require('express-spa-router');
 
+var React = require('react');
+
+var Compiler = require('songdown-compiler');
+
+/*
+ * =====
+ * UTILS
+ * =====
+ */
+
+var strToBool = function(str) {
+  if (str === 'true') {
+    return true;
+  } else {
+    return false;
+  }
+};
+
+var strToInt = function(str) {
+  return parseInt(str, 10);
+}
+
 /*
  * =============
  * CONFIGURATION
@@ -34,13 +56,6 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
-app.use(router(app, {
-  extraRoutes: [
-    'song',
-    'edit'
-  ]
-}));
-
 app.use('/static', express.static('public'));
 
 
@@ -50,6 +65,16 @@ app.use('/static', express.static('public'));
  * ROUTES
  * ======
  */
+
+var toApp = function(req, res, next) {
+  req.url = '/';
+  next();
+}
+
+app.get('/edit', toApp);
+app.get('/edit/:artist/:name', toApp);
+app.get('/song', toApp);
+app.get('/song/:artist/:name', toApp);
 
 app.get('/', function(req, res) {
 
@@ -65,6 +90,29 @@ app.get('/', function(req, res) {
   };
 
   res.render('index', partials);
+});
+
+app.get('/print', function(req, res) {
+
+  // Sort out types and stuff.
+  var compilerOptions = {
+    fontSize: strToInt(req.query.fontSize),
+    showChords: strToBool(req.query.showChords),
+    showComments: strToBool(req.query.showComments),
+    showGOTOs: strToBool(req.query.showGOTOs),
+    source: req.query.source,
+    theme: req.query.theme,
+    transpose: strToInt(req.query.transpose)
+  }
+
+  var partials = {
+    artist: req.query.artist,
+    html: React.renderToStaticMarkup(React.createElement(Compiler, compilerOptions)),
+    key: req.query.key,
+    name: req.query.name
+  };
+
+  res.render('print', partials);
 });
 
 

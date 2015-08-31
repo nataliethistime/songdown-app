@@ -4,26 +4,36 @@ var React = require('react');
 var Reflux = require('reflux');
 var Radium = require('radium');
 var _ = require('lodash');
+var Uri = require('jsuri');
+var params = require('query-params');
 
 var FontSizeActions = require('./../actions/fontSize');
 var ThemeActions = require('./../actions/theme');
 var ToolboxActions = require('./../actions/toolbox');
 var TransposeActions = require('./../actions/transpose');
 
+var FontSizeStore = require('./../stores/fontSize');
 var ShowChordsStore = require('./../stores/showChords');
 var ShowCommentsStore = require('./../stores/showComments');
 var ShowGOTOsStore = require('./../stores/showGOTOs');
 var ShowVideoStore = require('./../stores/showVideo');
+var SongStore = require('./../stores/song');
+var ThemeStore = require('./../stores/theme');
+var TransposeStore = require('./../stores/transpose');
 
 var styles = require('./../styles');
 
 var Toolbox = React.createClass({
 
   mixins: [
+    Reflux.connect(FontSizeStore, 'fontSize'),
     Reflux.connect(ShowChordsStore, 'showChords'),
     Reflux.connect(ShowCommentsStore, 'showComments'),
     Reflux.connect(ShowGOTOsStore, 'showGOTOs'),
-    Reflux.connect(ShowVideoStore, 'showVideo')
+    Reflux.connect(ShowVideoStore, 'showVideo'),
+    Reflux.connect(SongStore, 'song'),
+    Reflux.connect(ThemeStore, 'theme'),
+    Reflux.connect(TransposeStore, 'transpose')
   ],
 
   toggleChords: function(e) {
@@ -50,23 +60,23 @@ var Toolbox = React.createClass({
     ThemeActions.set(e.target.value);
   },
 
-  print: function() {
-    var isChrome = navigator.userAgent.toLowerCase().indexOf('chrome') > -1;
+  generatePrintUrl: function() {
+    var compilerOptions = {
+      artist: this.state.song.artist,
+      fontSize: this.state.fontSize,
+      key: this.state.song.key,
+      name: this.state.song.name,
+      showChords: this.state.showChords,
+      showComments: this.state.showComments,
+      showGOTOs: this.state.showGOTOs,
+      source: this.state.song.source,
+      theme: this.state.theme,
+      transpose: this.state.transpose
+    };
 
-    if (isChrome) {
-      _.defer(window.print);
-    } else {
-      // This is caused by a limitation in Radium, see:
-      // https://github.com/FormidableLabs/radium/issues/132
-
-      var msg = [
-        'ATTENTION:',
-        'Due to an issue in your browser, printing will not work. :(',
-        'Please use Google Chrome for printing from this site.'
-      ];
-
-      alert(msg.join('\n'));
-    }
+    return new Uri(window.location.origin)
+      .setPath('/print')
+      .setQuery(params.encode(compilerOptions));
   },
 
   render: function() {
@@ -121,7 +131,7 @@ var Toolbox = React.createClass({
         </p>
 
         <p>
-          <button type="button" onClick={this.print}>Print</button>
+          <a href={this.generatePrintUrl()} target="_blank">Print!</a>
         </p>
       </div>
     );
