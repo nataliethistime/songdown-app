@@ -7,7 +7,7 @@ This is the web application component of the Songdown project.
 
 # Changes
 
-### 1.2.0
+### 1.2.0 (2015-08-2)
 - Fixed the printing silliness once and for all.
 
 ### 1.1.0 (2015-08-30)
