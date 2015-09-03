@@ -6,8 +6,6 @@ var fs = require('fs');
 var express = require('express');
 var app = express();
 
-var router = require('express-spa-router');
-
 var React = require('react');
 
 var Compiler = require('songdown-compiler');
