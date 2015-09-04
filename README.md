@@ -9,6 +9,7 @@ This is the web application component of the Songdown project.
 
 ### 1.3.0 (2015-09-04)
 - Use `songdown-packager` when running offline.
+- Implemented 404 page.
 
 ### 1.2.1 (2015-09-04)
 - Fixed a lil' woopsie that killed the site. ;)

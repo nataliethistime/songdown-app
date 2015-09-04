@@ -27,6 +27,8 @@ var SongStore = Reflux.createStore({
       if (data && data[artist] && data[artist][name]) {
         this.data = data[artist][name];
         this.trigger(data[artist][name]);
+      } else {
+        window.location.pathname = '/404';
       }
     }, this);
   },

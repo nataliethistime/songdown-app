@@ -67,12 +67,13 @@ app.use('/static', express.static('public'));
 var toApp = function(req, res, next) {
   req.url = '/';
   next();
-}
+};
 
 app.get('/edit', toApp);
 app.get('/edit/:artist/:name', toApp);
 app.get('/song', toApp);
 app.get('/song/:artist/:name', toApp);
+app.get('/404', toApp);
 
 app.get('/', function(req, res) {
 
@@ -101,7 +102,7 @@ app.get('/print', function(req, res) {
     source: req.query.source,
     theme: req.query.theme,
     transpose: strToInt(req.query.transpose)
-  }
+  };
 
   var partials = {
     artist: req.query.artist,
