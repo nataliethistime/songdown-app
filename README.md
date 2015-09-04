@@ -7,6 +7,9 @@ This is the web application component of the Songdown project.
 
 # Changes
 
+### 1.3.0
+- Use `songdown-packager` when running offline.
+
 ### 1.2.1 (2015-09-04)
 - Fixed a lil' woopsie that killed the site. ;)
 
