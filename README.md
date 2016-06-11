@@ -7,6 +7,9 @@ This is the web application component of the Songdown project.
 
 # Changes
 
+### 1.3.1 (2016-06-12)
+- Fixed the bullet points on the home page.
+
 ### 1.3.0 (2015-09-04)
 - Use `songdown-packager` when running offline.
 - Implemented 404 page.
